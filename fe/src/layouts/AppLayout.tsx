@@ -4,13 +4,16 @@ import Sidebar from '../components/layout/Sidebar'
 import TopBar from '../components/layout/TopBar'
 import ToastViewport from '../components/notifications/ToastViewport'
 import { NotificationsProvider, useNotifications } from '../context/NotificationsContext'
+import { useLocalStorageState } from '../hooks/useLocalStorageState'
+import { SETTINGS_KEYS } from '../config/settingsKeys'
 
 function LowStockSeed() {
   const { notify } = useNotifications()
+  const [lowStockAlerts] = useLocalStorageState(SETTINGS_KEYS.lowStockAlerts, true)
   const seeded = useRef(false)
 
   useEffect(() => {
-    if (seeded.current) return
+    if (seeded.current || !lowStockAlerts) return
     seeded.current = true
 
     notify({
@@ -19,7 +22,7 @@ function LowStockSeed() {
       icon: 'warning',
       variant: 'warning',
     })
-  }, [notify])
+  }, [notify, lowStockAlerts])
 
   return null
 }

@@ -5,9 +5,11 @@ const LOW_STOCK_THRESHOLD = 5
 
 interface ProductsTableProps {
   products: CatalogProduct[]
+  onEdit: (product: CatalogProduct) => void
+  onDelete: (product: CatalogProduct) => void
 }
 
-function ProductsTable({ products }: ProductsTableProps) {
+function ProductsTable({ products, onEdit, onDelete }: ProductsTableProps) {
   return (
     <div className="bg-surface-container-low rounded-xl border border-outline-variant overflow-hidden flex-1 flex flex-col shadow-sm">
       <div className="overflow-x-auto flex-1">
@@ -46,7 +48,7 @@ function ProductsTable({ products }: ProductsTableProps) {
                 const lowStock = product.stock <= LOW_STOCK_THRESHOLD
                 return (
                   <tr
-                    key={product.code}
+                    key={product.id}
                     className={`hover:bg-surface-container transition-colors group ${lowStock ? 'bg-error-container/5' : ''}`}
                   >
                     <td className="px-6 py-4 text-body-md font-body-md text-on-surface font-mono">{product.code}</td>
@@ -71,6 +73,7 @@ function ProductsTable({ products }: ProductsTableProps) {
                       <div className="flex justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
                         <button
                           type="button"
+                          onClick={() => onEdit(product)}
                           title="Editar Produto"
                           aria-label={`Editar ${product.name}`}
                           className="p-2 rounded-lg hover:bg-surface-container-highest text-on-surface-variant hover:text-primary transition-colors"
@@ -79,11 +82,12 @@ function ProductsTable({ products }: ProductsTableProps) {
                         </button>
                         <button
                           type="button"
-                          title="Ajustar Estoque"
-                          aria-label={`Ajustar estoque de ${product.name}`}
-                          className="p-2 rounded-lg hover:bg-surface-container-highest text-on-surface-variant hover:text-primary transition-colors"
+                          onClick={() => onDelete(product)}
+                          title="Excluir Produto"
+                          aria-label={`Excluir ${product.name}`}
+                          className="p-2 rounded-lg hover:bg-error-container/10 text-on-surface-variant hover:text-error transition-colors"
                         >
-                          <span className="material-symbols-outlined text-[20px]">inventory_2</span>
+                          <span className="material-symbols-outlined text-[20px]">delete</span>
                         </button>
                       </div>
                     </td>

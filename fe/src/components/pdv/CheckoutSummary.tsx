@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { PaymentMethod } from '../../types/sale'
 import { formatCurrency } from '../../utils/currency'
+import { formatPhoneInput } from '../../utils/phone'
 
 interface PaymentOption {
   method: PaymentMethod
@@ -23,6 +24,10 @@ interface CheckoutSummaryProps {
   discount: number
   onApplyDiscount: (value: number) => void
   onRemoveDiscount: () => void
+  customerName: string
+  onChangeCustomerName: (value: string) => void
+  customerPhone: string
+  onChangeCustomerPhone: (value: string) => void
   paymentMethod: PaymentMethod
   onSelectPaymentMethod: (method: PaymentMethod) => void
   cardBrand: string
@@ -31,6 +36,7 @@ interface CheckoutSummaryProps {
   onSelectInstallments: (installments: number) => void
   itemCount: number
   onFinalize: () => void
+  submitting?: boolean
 }
 
 function CheckoutSummary({
@@ -38,6 +44,10 @@ function CheckoutSummary({
   discount,
   onApplyDiscount,
   onRemoveDiscount,
+  customerName,
+  onChangeCustomerName,
+  customerPhone,
+  onChangeCustomerPhone,
   paymentMethod,
   onSelectPaymentMethod,
   cardBrand,
@@ -46,10 +56,14 @@ function CheckoutSummary({
   onSelectInstallments,
   itemCount,
   onFinalize,
+  submitting = false,
 }: CheckoutSummaryProps) {
   const [editingDiscount, setEditingDiscount] = useState(false)
   const [discountDraft, setDiscountDraft] = useState('')
   const [cashReceivedDraft, setCashReceivedDraft] = useState('')
+  const [customerNameTouched, setCustomerNameTouched] = useState(false)
+
+  const customerNameMissing = customerName.trim() === ''
 
   const total = Math.max(subtotal - discount, 0)
   const installmentValue = total / installments
@@ -60,6 +74,10 @@ function CheckoutSummary({
   const cashInsufficient = paymentMethod === 'cash' && (!hasCashReceived || (changeDue ?? 0) < 0)
 
   const handleFinalize = () => {
+    if (customerNameMissing) {
+      setCustomerNameTouched(true)
+      return
+    }
     onFinalize()
     setCashReceivedDraft('')
   }
@@ -92,6 +110,39 @@ function CheckoutSummary({
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-md flex flex-col gap-md">
+        <div>
+          <label className="block text-label-md font-label-md text-on-surface-variant mb-xs">
+            Nome do Cliente
+          </label>
+          <input
+            className={`w-full h-10 bg-background border rounded-md px-sm text-body-md font-body-md text-on-surface focus:outline-none focus:ring-1 ${
+              customerNameTouched && customerNameMissing
+                ? 'border-error focus:border-error focus:ring-error'
+                : 'border-outline-variant focus:border-primary focus:ring-primary'
+            }`}
+            value={customerName}
+            onChange={(event) => onChangeCustomerName(event.target.value)}
+            onBlur={() => setCustomerNameTouched(true)}
+            placeholder="Ex: Maria Souza"
+          />
+          {customerNameTouched && customerNameMissing && (
+            <p className="text-label-md font-label-md text-error mt-xs">Informe o nome do cliente.</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-label-md font-label-md text-on-surface-variant mb-xs">
+            Telefone do Cliente (opcional)
+          </label>
+          <input
+            className="w-full h-10 bg-background border border-outline-variant rounded-md px-sm text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            value={customerPhone}
+            onChange={(event) => onChangeCustomerPhone(formatPhoneInput(event.target.value))}
+            placeholder="(00) 00000-0000"
+            inputMode="tel"
+          />
+        </div>
+
         <div className="space-y-sm pb-md border-b border-outline-variant">
           <div className="flex justify-between items-center">
             <span className="text-body-md font-body-md text-on-surface-variant">Subtotal</span>
@@ -274,11 +325,11 @@ function CheckoutSummary({
         <button
           type="button"
           onClick={handleFinalize}
-          disabled={itemCount === 0 || cashInsufficient}
+          disabled={itemCount === 0 || cashInsufficient || submitting || (customerNameTouched && customerNameMissing)}
           className="w-full bg-primary-container text-on-primary-container h-touch-target rounded-lg flex items-center justify-center gap-xs text-headline-sm font-headline-sm font-bold hover:opacity-90 transition-colors active:scale-95 shadow-[0_0_20px_rgba(255,87,34,0.3)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
-          <span className="material-symbols-outlined">receipt_long</span>
-          Finalizar Venda
+          <span className="material-symbols-outlined">{submitting ? 'hourglass_empty' : 'receipt_long'}</span>
+          {submitting ? 'Enviando...' : 'Finalizar Venda'}
         </button>
       </div>
     </section>

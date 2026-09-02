@@ -13,7 +13,6 @@ const navItems: NavItem[] = [
   { label: 'Estoque', path: '/inventory', icon: 'inventory_2' },
   { label: 'Trocas/Devoluções', path: '/exchanges', icon: 'rebase_edit' },
   { label: 'Histórico de Vendas', path: '/sales-history', icon: 'history' },
-  { label: 'Relatórios Fiscais', path: '/fiscal-reports', icon: 'description' },
 ]
 
 function Sidebar() {

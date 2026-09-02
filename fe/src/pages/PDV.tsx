@@ -1,18 +1,30 @@
 import { useState } from 'react'
 import { useNotifications } from '../context/NotificationsContext'
+import { useLocalStorageState } from '../hooks/useLocalStorageState'
+import { SETTINGS_KEYS } from '../config/settingsKeys'
 import ProductSearch from '../components/pdv/ProductSearch'
 import CartItemRow from '../components/pdv/CartItemRow'
 import CheckoutSummary from '../components/pdv/CheckoutSummary'
+import SaleSuccessOverlay from '../components/pdv/SaleSuccessOverlay'
 import type { CartItem, PaymentMethod, Product } from '../types/sale'
 import { formatCurrency } from '../utils/currency'
+import { createSale } from '../api/sales'
+import { ApiError } from '../api/client'
+import { toApiPaymentMethod } from '../utils/paymentMethod'
 
 function PDV() {
   const { notify } = useNotifications()
+  const [autoPrintReceipt] = useLocalStorageState(SETTINGS_KEYS.autoPrintReceipt, false)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [discount, setDiscount] = useState(0)
+  const [customerName, setCustomerName] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit')
   const [cardBrand, setCardBrand] = useState('Mastercard')
   const [installments, setInstallments] = useState(1)
+  const [submitting, setSubmitting] = useState(false)
+  const [catalogVersion, setCatalogVersion] = useState(0)
+  const [saleSuccess, setSaleSuccess] = useState<{ total: number; customerName: string } | null>(null)
 
   const addProduct = (product: Product) => {
     setCartItems((current) => {
@@ -47,28 +59,62 @@ function PDV() {
   const clearSale = () => {
     setCartItems([])
     setDiscount(0)
+    setCustomerName('')
+    setCustomerPhone('')
   }
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
 
-  const finalizeSale = () => {
-    if (cartItems.length === 0) return
-    const total = Math.max(subtotal - discount, 0)
-    notify({
-      title: 'Venda Finalizada',
-      message: `Venda de ${formatCurrency(total)} concluída com sucesso.`,
-      icon: 'receipt_long',
-      variant: 'info',
-    })
-    clearSale()
-    setInstallments(1)
+  const finalizeSale = async () => {
+    if (cartItems.length === 0 || submitting || customerName.trim() === '') return
+
+    setSubmitting(true)
+    try {
+      const sale = await createSale({
+        paymentMethod: toApiPaymentMethod(paymentMethod),
+        discount,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim() || undefined,
+        installments: paymentMethod === 'credit' ? installments : undefined,
+        cardBrand: paymentMethod === 'credit' || paymentMethod === 'debit' ? cardBrand : undefined,
+        items: cartItems.map((item) => ({ productVariantId: item.id, quantity: item.quantity })),
+      })
+
+      setSaleSuccess({ total: Number(sale.total), customerName: customerName.trim() })
+      notify({
+        title: 'Venda Finalizada',
+        message: `Venda de ${formatCurrency(Number(sale.total))} concluída com sucesso.`,
+        icon: 'receipt_long',
+        variant: 'info',
+      })
+      if (autoPrintReceipt) {
+        notify({
+          title: 'Recibo Impresso',
+          message: 'O recibo foi enviado automaticamente para a impressora.',
+          icon: 'print',
+          variant: 'info',
+        })
+      }
+      clearSale()
+      setInstallments(1)
+      setCatalogVersion((current) => current + 1)
+    } catch (err) {
+      notify({
+        title: 'Não foi Possível Finalizar a Venda',
+        message: err instanceof ApiError ? err.message : 'Verifique a conexão com o servidor e tente novamente.',
+        icon: 'error',
+        variant: 'error',
+      })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
     <div className="flex flex-col md:flex-row gap-gutter h-full min-h-0">
       <section className="flex-1 flex flex-col bg-surface-container-low rounded-xl border border-outline-variant overflow-hidden relative min-h-0">
-        <ProductSearch onSelect={addProduct} />
+        <ProductSearch key={catalogVersion} onSelect={addProduct} />
 
         <div className="flex-1 min-h-0 overflow-y-auto bg-surface">
           {cartItems.length === 0 ? (
@@ -125,6 +171,10 @@ function PDV() {
         discount={discount}
         onApplyDiscount={setDiscount}
         onRemoveDiscount={() => setDiscount(0)}
+        customerName={customerName}
+        onChangeCustomerName={setCustomerName}
+        customerPhone={customerPhone}
+        onChangeCustomerPhone={setCustomerPhone}
         paymentMethod={paymentMethod}
         onSelectPaymentMethod={setPaymentMethod}
         cardBrand={cardBrand}
@@ -133,7 +183,16 @@ function PDV() {
         onSelectInstallments={setInstallments}
         itemCount={cartItems.length}
         onFinalize={finalizeSale}
+        submitting={submitting}
       />
+
+      {saleSuccess && (
+        <SaleSuccessOverlay
+          total={saleSuccess.total}
+          customerName={saleSuccess.customerName}
+          onClose={() => setSaleSuccess(null)}
+        />
+      )}
     </div>
   )
 }

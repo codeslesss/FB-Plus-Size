@@ -3,7 +3,10 @@ import AppLayout from './layouts/AppLayout'
 import Dashboard from './pages/Dashboard'
 import PDV from './pages/PDV'
 import Products from './pages/Products'
-import Placeholder from './pages/Placeholder'
+import Inventory from './pages/Inventory'
+import Exchanges from './pages/Exchanges'
+import SalesHistory from './pages/SalesHistory'
+import Settings from './pages/Settings'
 
 function App() {
   return (
@@ -12,11 +15,10 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/pdv" element={<PDV />} />
         <Route path="/products" element={<Products />} />
-        <Route path="/inventory" element={<Placeholder title="Estoque" />} />
-        <Route path="/exchanges" element={<Placeholder title="Trocas/Devoluções" />} />
-        <Route path="/sales-history" element={<Placeholder title="Histórico de Vendas" />} />
-        <Route path="/fiscal-reports" element={<Placeholder title="Relatórios Fiscais" />} />
-        <Route path="/settings" element={<Placeholder title="Configurações" />} />
+        <Route path="/inventory" element={<Inventory />} />
+        <Route path="/exchanges" element={<Exchanges />} />
+        <Route path="/sales-history" element={<SalesHistory />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   )

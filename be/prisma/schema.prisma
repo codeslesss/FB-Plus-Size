@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PaymentMethod {
+  CREDITO
+  DEBITO
+  PIX
+  DINHEIRO
+}
+
+enum SaleStatus {
+  COMPLETED
+  CANCELLED
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  sku         String   @unique
+  category    String
+  price       Decimal  @db.Decimal(10, 2)
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  variants  ProductVariant[]
+  saleItems SaleItem[]
+}
+
+model ProductVariant {
+  id                String   @id @default(cuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id])
+  size              String
+  color             String
+  stockQuantity     Int      @default(0)
+  lowStockThreshold Int      @default(5)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  saleItems        SaleItem[]
+  exchangesOut     Exchange[] @relation("ExchangeReturnedVariant")
+  exchangesIn      Exchange[] @relation("ExchangeNewVariant")
+
+  @@unique([productId, size, color])
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  total         Decimal       @db.Decimal(10, 2)
+  discount      Decimal       @db.Decimal(10, 2) @default(0)
+  paymentMethod PaymentMethod
+  installments  Int           @default(1)
+  cardBrand     String?
+  status        SaleStatus    @default(COMPLETED)
+  customerName  String?
+  customerPhone String?
+  createdAt     DateTime      @default(now())
+
+  items     SaleItem[]
+  exchanges Exchange[]
+}
+
+model SaleItem {
+  id               String   @id @default(cuid())
+  saleId           String
+  sale             Sale     @relation(fields: [saleId], references: [id])
+  productId        String
+  product          Product  @relation(fields: [productId], references: [id])
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+  quantity         Int
+  unitPrice        Decimal  @db.Decimal(10, 2)
+  subtotal         Decimal  @db.Decimal(10, 2)
+}
+
+model Exchange {
+  id     String @id @default(cuid())
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id])
+
+  returnedVariantId String
+  returnedVariant   ProductVariant @relation("ExchangeReturnedVariant", fields: [returnedVariantId], references: [id])
+  returnedQuantity  Int            @default(1)
+
+  newVariantId String?
+  newVariant   ProductVariant? @relation("ExchangeNewVariant", fields: [newVariantId], references: [id])
+  newQuantity  Int?
+
+  priceDifference Decimal  @db.Decimal(10, 2) @default(0)
+  reason          String?
+  refundMethod    String?
+  createdAt       DateTime @default(now())
+}
