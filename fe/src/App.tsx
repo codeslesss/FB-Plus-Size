@@ -6,7 +6,6 @@ import Products from './pages/Products'
 import Inventory from './pages/Inventory'
 import Exchanges from './pages/Exchanges'
 import SalesHistory from './pages/SalesHistory'
-import Settings from './pages/Settings'
 
 function App() {
   return (
@@ -18,7 +17,6 @@ function App() {
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/exchanges" element={<Exchanges />} />
         <Route path="/sales-history" element={<SalesHistory />} />
-        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   )

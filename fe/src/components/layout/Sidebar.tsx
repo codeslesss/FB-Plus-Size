@@ -70,22 +70,6 @@ function Sidebar() {
             </NavLink>
           </li>
         ))}
-        <li className="mt-auto">
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              [
-                'flex items-center gap-sm px-sm py-sm rounded-lg text-label-lg font-label-lg transition-all',
-                isActive
-                  ? 'bg-secondary-container text-on-secondary-container font-bold'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high',
-              ].join(' ')
-            }
-          >
-            <span className="material-symbols-outlined">settings</span>
-            Configurações
-          </NavLink>
-        </li>
       </ul>
     </nav>
   )
