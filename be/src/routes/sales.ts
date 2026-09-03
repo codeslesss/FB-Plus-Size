@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { Prisma, PaymentMethod } from '@prisma/client'
+import { PaymentMethod } from '@prisma/client'
 import { prisma } from '../lib/prisma.js'
 import { asyncHandler } from '../lib/asyncHandler.js'
 import { BadRequestError, NotFoundError } from '../lib/errors.js'
@@ -75,7 +75,7 @@ router.post(
 
       const variantsById = new Map(variants.map((variant) => [variant.id, variant]))
 
-      let subtotalSum = new Prisma.Decimal(0)
+      let subtotalSum = 0
       const saleItemsData = items.map((item) => {
         const variant = variantsById.get(item.productVariantId)
         if (!variant) throw new NotFoundError(`Variante ${item.productVariantId} não encontrada`)
@@ -83,8 +83,8 @@ router.post(
           throw new BadRequestError(`Estoque insuficiente para ${variant.product.name} (${variant.size}/${variant.color})`)
         }
 
-        const subtotal = variant.product.price.mul(item.quantity)
-        subtotalSum = subtotalSum.add(subtotal)
+        const subtotal = variant.product.price * item.quantity
+        subtotalSum += subtotal
 
         return {
           productId: variant.productId,
@@ -95,8 +95,8 @@ router.post(
         }
       })
 
-      const discountDecimal = Prisma.Decimal.min(new Prisma.Decimal(discount), subtotalSum)
-      const total = subtotalSum.sub(discountDecimal)
+      const discountValue = Math.min(discount, subtotalSum)
+      const total = subtotalSum - discountValue
 
       for (const item of items) {
         await tx.productVariant.update({
@@ -108,7 +108,7 @@ router.post(
       return tx.sale.create({
         data: {
           total,
-          discount: discountDecimal,
+          discount: discountValue,
           paymentMethod,
           installments: paymentMethod === 'CREDITO' ? installments : 1,
           cardBrand: isCardPayment ? cardBrand || null : null,

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { Prisma, PaymentMethod } from '@prisma/client'
+import { PaymentMethod } from '@prisma/client'
 import { prisma } from '../lib/prisma.js'
 import { asyncHandler } from '../lib/asyncHandler.js'
 
@@ -34,8 +34,8 @@ router.get(
       prisma.exchange.count({ where: { createdAt: { gte: since } } }),
     ])
 
-    const totalToday = salesToday.reduce((sum, sale) => sum.add(sale.total), new Prisma.Decimal(0))
-    const averageTicket = salesToday.length > 0 ? totalToday.div(salesToday.length) : new Prisma.Decimal(0)
+    const totalToday = salesToday.reduce((sum, sale) => sum + sale.total, 0)
+    const averageTicket = salesToday.length > 0 ? totalToday / salesToday.length : 0
 
     res.json({
       salesTodayTotal: totalToday.toFixed(2),

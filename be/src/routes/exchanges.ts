@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { Prisma } from '@prisma/client'
 import { prisma } from '../lib/prisma.js'
 import { asyncHandler } from '../lib/asyncHandler.js'
 import { BadRequestError, NotFoundError } from '../lib/errors.js'
@@ -59,7 +58,7 @@ router.post(
       })
       if (!returnedVariant) throw new NotFoundError('Variante devolvida não encontrada')
 
-      let priceDifference = new Prisma.Decimal(0)
+      let priceDifference = 0
       let newVariant = null
 
       if (newVariantId && newQuantity) {
@@ -72,9 +71,9 @@ router.post(
           throw new BadRequestError(`Estoque insuficiente para ${newVariant.product.name} (${newVariant.size}/${newVariant.color})`)
         }
 
-        const returnedValue = returnedVariant.product.price.mul(returnedQuantity)
-        const newValue = newVariant.product.price.mul(newQuantity)
-        priceDifference = newValue.sub(returnedValue)
+        const returnedValue = returnedVariant.product.price * returnedQuantity
+        const newValue = newVariant.product.price * newQuantity
+        priceDifference = newValue - returnedValue
 
         await tx.productVariant.update({
           where: { id: newVariantId },

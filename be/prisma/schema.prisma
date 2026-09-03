@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -20,11 +20,11 @@ enum SaleStatus {
 }
 
 model Product {
-  id          String   @id @default(cuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   sku         String   @unique
   category    String
-  price       Decimal  @db.Decimal(10, 2)
+  price       Float
   description String?
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -35,8 +35,8 @@ model Product {
 }
 
 model ProductVariant {
-  id                String   @id @default(cuid())
-  productId         String
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId         String   @db.ObjectId
   product           Product  @relation(fields: [productId], references: [id])
   size              String
   color             String
@@ -45,17 +45,17 @@ model ProductVariant {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  saleItems        SaleItem[]
-  exchangesOut     Exchange[] @relation("ExchangeReturnedVariant")
-  exchangesIn      Exchange[] @relation("ExchangeNewVariant")
+  saleItems    SaleItem[]
+  exchangesOut Exchange[] @relation("ExchangeReturnedVariant")
+  exchangesIn  Exchange[] @relation("ExchangeNewVariant")
 
   @@unique([productId, size, color])
 }
 
 model Sale {
-  id            String        @id @default(cuid())
-  total         Decimal       @db.Decimal(10, 2)
-  discount      Decimal       @db.Decimal(10, 2) @default(0)
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  total         Float
+  discount      Float         @default(0)
   paymentMethod PaymentMethod
   installments  Int           @default(1)
   cardBrand     String?
@@ -69,32 +69,32 @@ model Sale {
 }
 
 model SaleItem {
-  id               String   @id @default(cuid())
-  saleId           String
-  sale             Sale     @relation(fields: [saleId], references: [id])
-  productId        String
-  product          Product  @relation(fields: [productId], references: [id])
-  productVariantId String
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  saleId           String         @db.ObjectId
+  sale             Sale           @relation(fields: [saleId], references: [id])
+  productId        String         @db.ObjectId
+  product          Product        @relation(fields: [productId], references: [id])
+  productVariantId String         @db.ObjectId
   productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
   quantity         Int
-  unitPrice        Decimal  @db.Decimal(10, 2)
-  subtotal         Decimal  @db.Decimal(10, 2)
+  unitPrice        Float
+  subtotal         Float
 }
 
 model Exchange {
-  id     String @id @default(cuid())
-  saleId String
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  saleId String @db.ObjectId
   sale   Sale   @relation(fields: [saleId], references: [id])
 
-  returnedVariantId String
+  returnedVariantId String         @db.ObjectId
   returnedVariant   ProductVariant @relation("ExchangeReturnedVariant", fields: [returnedVariantId], references: [id])
   returnedQuantity  Int            @default(1)
 
-  newVariantId String?
+  newVariantId String?         @db.ObjectId
   newVariant   ProductVariant? @relation("ExchangeNewVariant", fields: [newVariantId], references: [id])
   newQuantity  Int?
 
-  priceDifference Decimal  @db.Decimal(10, 2) @default(0)
+  priceDifference Float    @default(0)
   reason          String?
   refundMethod    String?
   createdAt       DateTime @default(now())
