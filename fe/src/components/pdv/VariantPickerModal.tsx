@@ -47,7 +47,7 @@ function VariantPickerModal({ entry, cartQuantities, onClose, onConfirm }: Varia
       title={entry.name}
       subtitle={`Cód: ${entry.code}${entry.brand ? ` · ${entry.brand}` : ''} · ${formatCurrency(entry.price)}`}
       onClose={onClose}
-      maxWidthClassName="max-w-md"
+      maxWidthClassName="max-w-[28rem]"
     >
       <div className="flex flex-col gap-md">
         {availableVariants.length === 0 ? (
