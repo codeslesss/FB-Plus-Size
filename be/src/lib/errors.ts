@@ -18,3 +18,9 @@ export class BadRequestError extends HttpError {
     super(400, message)
   }
 }
+
+export class UnauthorizedError extends HttpError {
+  constructor(message = 'Não autenticado') {
+    super(401, message)
+  }
+}

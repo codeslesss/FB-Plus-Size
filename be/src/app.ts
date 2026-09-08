@@ -1,7 +1,10 @@
 import express from 'express'
 import cors from 'cors'
+import cookieParser from 'cookie-parser'
 import type { ErrorRequestHandler } from 'express'
 import { HttpError } from './lib/errors.js'
+import { requireAuth } from './middleware/requireAuth.js'
+import authRouter from './routes/auth.js'
 import productsRouter from './routes/products.js'
 import inventoryRouter from './routes/inventory.js'
 import salesRouter from './routes/sales.js'
@@ -11,16 +14,25 @@ import dashboardRouter from './routes/dashboard.js'
 export function createApp() {
   const app = express()
 
-  app.use(cors())
+  const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim())
+  app.use(
+    cors({
+      origin: allowedOrigins ?? true,
+      credentials: true,
+    }),
+  )
   app.use(express.json())
+  app.use(cookieParser())
 
   app.get('/health', (_req, res) => res.json({ status: 'ok' }))
 
-  app.use('/api/products', productsRouter)
-  app.use('/api/inventory', inventoryRouter)
-  app.use('/api/sales', salesRouter)
-  app.use('/api/exchanges', exchangesRouter)
-  app.use('/api/dashboard', dashboardRouter)
+  app.use('/api/auth', authRouter)
+
+  app.use('/api/products', requireAuth, productsRouter)
+  app.use('/api/inventory', requireAuth, inventoryRouter)
+  app.use('/api/sales', requireAuth, salesRouter)
+  app.use('/api/exchanges', requireAuth, exchangesRouter)
+  app.use('/api/dashboard', requireAuth, dashboardRouter)
 
   app.use((req, res) => {
     res.status(404).json({ error: 'Rota não encontrada' })

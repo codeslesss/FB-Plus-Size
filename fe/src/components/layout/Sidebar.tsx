@@ -1,4 +1,5 @@
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 
 interface NavItem {
   label: string
@@ -16,6 +17,21 @@ const navItems: NavItem[] = [
 ]
 
 function Sidebar() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login', { replace: true })
+  }
+
+  const initials = (user?.name ?? '')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+
   return (
     <nav className="hidden md:flex flex-col h-screen py-md px-sm fixed left-0 top-0 z-40 bg-surface-container-low border-r border-outline-variant w-[280px]">
       <div className="flex items-center gap-sm px-sm mb-lg">
@@ -71,6 +87,27 @@ function Sidebar() {
           </li>
         ))}
       </ul>
+
+      <div className="pt-sm border-t border-outline-variant">
+        <div className="flex items-center gap-sm p-sm rounded-lg hover:bg-surface-container-high transition-colors">
+          <span className="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-md font-label-md font-bold shrink-0">
+            {initials || <span className="material-symbols-outlined text-[18px]">person</span>}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-label-lg font-label-lg text-on-surface font-bold truncate">{user?.name}</p>
+            <p className="text-label-md font-label-md text-on-surface-variant truncate">{user?.email}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            aria-label="Sair"
+            title="Sair"
+            className="p-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container/10 transition-colors shrink-0 cursor-pointer active:scale-95"
+          >
+            <span className="material-symbols-outlined text-[20px]">logout</span>
+          </button>
+        </div>
+      </div>
     </nav>
   )
 }
