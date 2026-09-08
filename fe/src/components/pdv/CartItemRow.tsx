@@ -45,8 +45,10 @@ function CartItemRow({ item, onIncrement, onDecrement, onRemove }: CartItemRowPr
         <button
           type="button"
           onClick={() => onIncrement(item.id)}
+          disabled={item.quantity >= item.stock}
           aria-label={`Aumentar quantidade de ${item.name}`}
-          className="w-6 h-6 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary-container hover:border-primary-container transition-colors active:scale-95"
+          title={item.quantity >= item.stock ? 'Estoque máximo atingido' : undefined}
+          className="w-6 h-6 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary-container hover:border-primary-container transition-colors active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-on-surface-variant disabled:hover:border-outline-variant"
         >
           <span className="material-symbols-outlined text-[16px]">add</span>
         </button>

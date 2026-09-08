@@ -12,7 +12,7 @@ function ProductSearch({ onSelect }: ProductSearchProps) {
   const [term, setTerm] = useState('')
   const { data, loading, error } = useApi(() => fetchProducts({ active: true }), [])
 
-  const catalog: (Product & { stock: number })[] = (data ?? []).flatMap((product) =>
+  const catalog: Product[] = (data ?? []).flatMap((product) =>
     product.variants.map((variant) => ({
       id: variant.id,
       code: product.sku,

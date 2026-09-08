@@ -27,8 +27,18 @@ function PDV() {
   const [saleSuccess, setSaleSuccess] = useState<{ total: number; customerName: string } | null>(null)
 
   const addProduct = (product: Product) => {
+    const existing = cartItems.find((item) => item.id === product.id)
+    if (existing && existing.quantity >= existing.stock) {
+      notify({
+        title: 'Estoque Máximo Atingido',
+        message: `Não há mais unidades de "${product.name}" disponíveis no estoque.`,
+        icon: 'warning',
+        variant: 'warning',
+      })
+      return
+    }
+
     setCartItems((current) => {
-      const existing = current.find((item) => item.id === product.id)
       if (existing) {
         return current.map((item) =>
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
@@ -40,7 +50,19 @@ function PDV() {
 
   const incrementItem = (id: string) => {
     setCartItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, quantity: item.quantity + 1 } : item)),
+      current.map((item) => {
+        if (item.id !== id) return item
+        if (item.quantity >= item.stock) {
+          notify({
+            title: 'Estoque Máximo Atingido',
+            message: `Não há mais unidades de "${item.name}" disponíveis no estoque.`,
+            icon: 'warning',
+            variant: 'warning',
+          })
+          return item
+        }
+        return { ...item, quantity: item.quantity + 1 }
+      }),
     )
   }
 
