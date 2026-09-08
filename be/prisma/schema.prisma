@@ -33,6 +33,8 @@ model Product {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   sku         String   @unique
+  barcode     String?
+  brand       String?
   category    String
   price       Float
   description String?

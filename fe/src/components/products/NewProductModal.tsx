@@ -20,6 +20,8 @@ const emptyVariant: VariantDraft = { size: '', color: '', stock: '' }
 function NewProductModal({ existingCategories, onClose, onCreated }: NewProductModalProps) {
   const [name, setName] = useState('')
   const [sku, setSku] = useState('')
+  const [barcode, setBarcode] = useState('')
+  const [brand, setBrand] = useState('')
   const [category, setCategory] = useState('')
   const [priceDraft, setPriceDraft] = useState('')
   const [description, setDescription] = useState('')
@@ -70,6 +72,8 @@ function NewProductModal({ existingCategories, onClose, onCreated }: NewProductM
       await createProduct({
         name: name.trim(),
         sku: sku.trim(),
+        barcode: barcode.trim() || undefined,
+        brand: brand.trim() || undefined,
         category: category.trim(),
         price: parsedPrice,
         description: description.trim() || undefined,
@@ -137,6 +141,37 @@ function NewProductModal({ existingCategories, onClose, onCreated }: NewProductM
                   onChange={(event) => setPriceDraft(event.target.value)}
                   placeholder="0,00"
                   inputMode="decimal"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-sm mt-sm">
+            <div>
+              <label className="block text-label-md font-label-md text-on-surface-variant uppercase mb-xs">
+                Marca (opcional)
+              </label>
+              <input
+                className="w-full h-11 bg-background border border-outline-variant rounded-lg px-sm text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                value={brand}
+                onChange={(event) => setBrand(event.target.value)}
+                placeholder="Ex: Malwee"
+              />
+            </div>
+            <div>
+              <label className="block text-label-md font-label-md text-on-surface-variant uppercase mb-xs">
+                Código de Barras (opcional)
+              </label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
+                  barcode_scanner
+                </span>
+                <input
+                  className="w-full h-11 bg-background border border-outline-variant rounded-lg pl-9 pr-sm text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                  value={barcode}
+                  onChange={(event) => setBarcode(event.target.value)}
+                  placeholder="Ex: 7891234567890"
+                  inputMode="numeric"
                 />
               </div>
             </div>

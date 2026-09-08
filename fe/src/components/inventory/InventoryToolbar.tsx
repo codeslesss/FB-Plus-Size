@@ -6,6 +6,7 @@ interface InventoryToolbarProps {
   categories: string[]
   lowStockOnly: boolean
   onToggleLowStockOnly: () => void
+  onNewProduct: () => void
 }
 
 function InventoryToolbar({
@@ -16,6 +17,7 @@ function InventoryToolbar({
   categories,
   lowStockOnly,
   onToggleLowStockOnly,
+  onNewProduct,
 }: InventoryToolbarProps) {
   return (
     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-md mb-md bg-surface-container-low p-sm rounded-xl border border-outline-variant shadow-sm">
@@ -52,19 +54,29 @@ function InventoryToolbar({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onToggleLowStockOnly}
-        aria-pressed={lowStockOnly}
-        className={`flex items-center justify-center gap-2 px-4 h-12 rounded-lg border text-label-lg font-label-lg font-bold transition-colors active:scale-95 ${
-          lowStockOnly
-            ? 'border-error text-error bg-error-container/10'
-            : 'border-outline-variant text-on-surface-variant hover:border-primary-container hover:text-primary-container'
-        }`}
-      >
-        <span className="material-symbols-outlined text-[20px]">warning</span>
-        Somente estoque baixo
-      </button>
+      <div className="flex items-center gap-sm">
+        <button
+          type="button"
+          onClick={onToggleLowStockOnly}
+          aria-pressed={lowStockOnly}
+          className={`flex items-center justify-center gap-2 px-4 h-12 rounded-lg border text-label-lg font-label-lg font-bold transition-colors active:scale-95 ${
+            lowStockOnly
+              ? 'border-error text-error bg-error-container/10'
+              : 'border-outline-variant text-on-surface-variant hover:border-primary-container hover:text-primary-container'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[20px]">warning</span>
+          Somente estoque baixo
+        </button>
+        <button
+          type="button"
+          onClick={onNewProduct}
+          className="flex items-center gap-2 px-6 h-12 rounded-lg bg-primary-container text-white font-label-lg text-label-lg font-bold hover:brightness-110 transition-all active:scale-95 shadow-md shadow-primary-container/20"
+        >
+          <span className="material-symbols-outlined">add</span>
+          Novo Produto
+        </button>
+      </div>
     </div>
   )
 }

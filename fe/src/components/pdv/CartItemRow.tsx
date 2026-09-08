@@ -21,9 +21,12 @@ function CartItemRow({ item, onIncrement, onDecrement, onRemove }: CartItemRowPr
         </div>
         <div className="min-w-0">
           <p className="text-body-md font-body-md font-semibold text-on-surface truncate">{item.name}</p>
-          <div className="flex gap-xs mt-1 items-center">
+          <div className="flex gap-xs mt-1 items-center flex-wrap">
             <span className="px-2 py-0.5 bg-surface-container-highest rounded-full text-[10px] font-label-md text-on-surface-variant">
               {item.size}
+            </span>
+            <span className="px-2 py-0.5 bg-surface-container-highest rounded-full text-[10px] font-label-md text-on-surface-variant">
+              {item.color}
             </span>
             <span className="text-[10px] font-label-md text-on-surface-variant">Cód: {item.code}</span>
           </div>

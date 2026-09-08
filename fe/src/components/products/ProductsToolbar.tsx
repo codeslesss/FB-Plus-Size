@@ -1,10 +1,9 @@
 interface ProductsToolbarProps {
   searchTerm: string
   onSearchChange: (value: string) => void
-  onNewProduct: () => void
 }
 
-function ProductsToolbar({ searchTerm, onSearchChange, onNewProduct }: ProductsToolbarProps) {
+function ProductsToolbar({ searchTerm, onSearchChange }: ProductsToolbarProps) {
   return (
     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-md mb-md bg-surface-container-low p-sm rounded-xl border border-outline-variant shadow-sm">
       <div className="relative flex-1 max-w-[28rem]">
@@ -18,17 +17,6 @@ function ProductsToolbar({ searchTerm, onSearchChange, onNewProduct }: ProductsT
           value={searchTerm}
           onChange={(event) => onSearchChange(event.target.value)}
         />
-      </div>
-
-      <div className="flex items-center gap-sm">
-        <button
-          type="button"
-          onClick={onNewProduct}
-          className="flex items-center gap-2 px-6 h-touch-target rounded-lg bg-primary-container text-white font-label-lg text-label-lg font-bold hover:brightness-110 transition-all active:scale-95 shadow-md shadow-primary-container/20"
-        >
-          <span className="material-symbols-outlined">add</span>
-          Novo Produto
-        </button>
       </div>
     </div>
   )

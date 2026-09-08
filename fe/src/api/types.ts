@@ -16,6 +16,8 @@ export interface ApiProduct {
   id: string
   name: string
   sku: string
+  barcode: string | null
+  brand: string | null
   category: string
   price: string
   description: string | null

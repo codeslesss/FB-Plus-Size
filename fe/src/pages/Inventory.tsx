@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import MetricCard from '../components/dashboard/MetricCard'
 import InventoryToolbar from '../components/inventory/InventoryToolbar'
 import InventoryTable from '../components/inventory/InventoryTable'
+import NewProductModal from '../components/products/NewProductModal'
 import EditProductModal from '../components/products/EditProductModal'
 import ConfirmDialog from '../components/common/ConfirmDialog'
 import AsyncState from '../components/common/AsyncState'
@@ -19,6 +20,7 @@ function Inventory() {
   const [searchTerm, setSearchTerm] = useState('')
   const [category, setCategory] = useState('')
   const [lowStockOnly, setLowStockOnly] = useState(false)
+  const [showNewProduct, setShowNewProduct] = useState(false)
   const [editingVariant, setEditingVariant] = useState<StockVariant | null>(null)
   const [deletingVariant, setDeletingVariant] = useState<StockVariant | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -27,6 +29,8 @@ function Inventory() {
     id: variant.id,
     productId: variant.product.id,
     code: variant.product.sku,
+    barcode: variant.product.barcode,
+    brand: variant.product.brand,
     name: variant.product.name,
     category: variant.product.category,
     size: variant.size,
@@ -55,6 +59,16 @@ function Inventory() {
         variant: 'error',
       })
     }
+  }
+
+  const handleCreated = () => {
+    reload()
+    notify({
+      title: 'Produto Cadastrado',
+      message: 'O novo produto já está disponível no estoque e no catálogo.',
+      icon: 'check_circle',
+      variant: 'info',
+    })
   }
 
   const trimmedTerm = searchTerm.trim().toLowerCase()
@@ -126,6 +140,7 @@ function Inventory() {
             categories={categories}
             lowStockOnly={lowStockOnly}
             onToggleLowStockOnly={() => setLowStockOnly((current) => !current)}
+            onNewProduct={() => setShowNewProduct(true)}
           />
 
           <InventoryTable
@@ -137,12 +152,22 @@ function Inventory() {
         </>
       )}
 
+      {showNewProduct && (
+        <NewProductModal
+          existingCategories={categories}
+          onClose={() => setShowNewProduct(false)}
+          onCreated={handleCreated}
+        />
+      )}
+
       {editingVariant && (
         <EditProductModal
           product={{
             id: editingVariant.productId,
             name: editingVariant.name,
             sku: editingVariant.code,
+            barcode: editingVariant.barcode,
+            brand: editingVariant.brand,
             category: editingVariant.category,
             price: editingVariant.price,
             description: editingVariant.description,

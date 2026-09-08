@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNotifications } from '../context/NotificationsContext'
 import { useLocalStorageState } from '../hooks/useLocalStorageState'
 import { SETTINGS_KEYS } from '../config/settingsKeys'
@@ -6,7 +6,7 @@ import ProductSearch from '../components/pdv/ProductSearch'
 import CartItemRow from '../components/pdv/CartItemRow'
 import CheckoutSummary from '../components/pdv/CheckoutSummary'
 import SaleSuccessOverlay from '../components/pdv/SaleSuccessOverlay'
-import type { CartItem, PaymentMethod, Product } from '../types/sale'
+import type { CartItem, CartLineInput, PaymentMethod } from '../types/sale'
 import { formatCurrency } from '../utils/currency'
 import { createSale } from '../api/sales'
 import { ApiError } from '../api/client'
@@ -26,25 +26,42 @@ function PDV() {
   const [catalogVersion, setCatalogVersion] = useState(0)
   const [saleSuccess, setSaleSuccess] = useState<{ total: number; customerName: string } | null>(null)
 
-  const addProduct = (product: Product) => {
-    const existing = cartItems.find((item) => item.id === product.id)
-    if (existing && existing.quantity >= existing.stock) {
+  const cartQuantities = useMemo(
+    () => Object.fromEntries(cartItems.map((item) => [item.id, item.quantity])),
+    [cartItems],
+  )
+
+  const addToCart = (input: CartLineInput, quantity = 1) => {
+    const existing = cartItems.find((item) => item.id === input.id)
+    const currentQty = existing?.quantity ?? 0
+    const room = input.stock - currentQty
+
+    if (room <= 0) {
       notify({
         title: 'Estoque Máximo Atingido',
-        message: `Não há mais unidades de "${product.name}" disponíveis no estoque.`,
+        message: `Não há mais unidades de "${input.name}" (${input.size}/${input.color}) disponíveis no estoque.`,
         icon: 'warning',
         variant: 'warning',
       })
       return
     }
 
+    const addQty = Math.min(quantity, room)
+    if (addQty < quantity) {
+      notify({
+        title: 'Quantidade Ajustada ao Estoque',
+        message: `Só havia ${addQty} unidade(s) de "${input.name}" (${input.size}/${input.color}) disponíveis — adicionamos o que tinha.`,
+        icon: 'warning',
+        variant: 'warning',
+      })
+    }
+
     setCartItems((current) => {
-      if (existing) {
-        return current.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
-        )
+      const found = current.find((item) => item.id === input.id)
+      if (found) {
+        return current.map((item) => (item.id === input.id ? { ...item, quantity: item.quantity + addQty } : item))
       }
-      return [...current, { ...product, quantity: 1 }]
+      return [...current, { ...input, quantity: addQty }]
     })
   }
 
@@ -136,7 +153,7 @@ function PDV() {
   return (
     <div className="flex flex-col md:flex-row gap-gutter h-full min-h-0">
       <section className="flex-1 flex flex-col bg-surface-container-low rounded-xl border border-outline-variant overflow-hidden relative min-h-0">
-        <ProductSearch key={catalogVersion} onSelect={addProduct} />
+        <ProductSearch key={catalogVersion} onSelect={addToCart} cartQuantities={cartQuantities} />
 
         <div className="flex-1 min-h-0 overflow-y-auto bg-surface">
           {cartItems.length === 0 ? (

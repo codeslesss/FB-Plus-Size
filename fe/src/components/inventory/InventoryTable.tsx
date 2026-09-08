@@ -175,7 +175,7 @@ function InventoryTable({ variants, onAdjustStock, onEdit, onDelete }: Inventory
                           <button
                             type="button"
                             onClick={() => onEdit(variant)}
-                            title="Editar Produto"
+                            title="Editar Produto e Tamanhos"
                             aria-label={`Editar ${variant.name}`}
                             className="p-2 rounded-lg hover:bg-surface-container-highest text-on-surface-variant hover:text-primary transition-colors"
                           >

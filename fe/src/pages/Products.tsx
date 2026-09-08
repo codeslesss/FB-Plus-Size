@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import ProductsToolbar from '../components/products/ProductsToolbar'
 import ProductsTable from '../components/products/ProductsTable'
-import NewProductModal from '../components/products/NewProductModal'
 import EditProductModal from '../components/products/EditProductModal'
 import ConfirmDialog from '../components/common/ConfirmDialog'
 import AsyncState from '../components/common/AsyncState'
@@ -14,7 +13,6 @@ import type { CatalogProduct } from '../types/product'
 function Products() {
   const { notify } = useNotifications()
   const [searchTerm, setSearchTerm] = useState('')
-  const [showNewProduct, setShowNewProduct] = useState(false)
   const [editingProduct, setEditingProduct] = useState<CatalogProduct | null>(null)
   const [deletingProduct, setDeletingProduct] = useState<CatalogProduct | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -23,6 +21,8 @@ function Products() {
   const catalog: CatalogProduct[] = (data ?? []).map((product) => ({
     id: product.id,
     code: product.sku,
+    barcode: product.barcode,
+    brand: product.brand,
     name: product.name,
     category: product.category,
     price: Number(product.price),
@@ -39,16 +39,6 @@ function Products() {
           product.name.toLowerCase().includes(trimmedTerm) || product.code.includes(trimmedTerm),
       )
     : catalog
-
-  const handleCreated = () => {
-    reload()
-    notify({
-      title: 'Produto Cadastrado',
-      message: 'O novo produto já está disponível no catálogo.',
-      icon: 'check_circle',
-      variant: 'info',
-    })
-  }
 
   const handleUpdated = () => {
     reload()
@@ -91,11 +81,11 @@ function Products() {
         <h1 className="text-headline-lg font-headline-lg text-on-surface hidden md:block">Produtos</h1>
         <h1 className="text-headline-lg-mobile font-headline-lg-mobile text-on-surface md:hidden">Produtos</h1>
         <p className="text-body-lg font-body-lg text-on-surface-variant mt-xs">
-          Gerencie seu catálogo e estoque centralizado.
+          Consulte seu catálogo. Para cadastrar um produto novo, use a tela de Estoque.
         </p>
       </header>
 
-      <ProductsToolbar searchTerm={searchTerm} onSearchChange={setSearchTerm} onNewProduct={() => setShowNewProduct(true)} />
+      <ProductsToolbar searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
       {error ? (
         <AsyncState error={error} onRetry={reload} />
@@ -109,20 +99,14 @@ function Products() {
         />
       )}
 
-      {showNewProduct && (
-        <NewProductModal
-          existingCategories={existingCategories}
-          onClose={() => setShowNewProduct(false)}
-          onCreated={handleCreated}
-        />
-      )}
-
       {editingProduct && (
         <EditProductModal
           product={{
             id: editingProduct.id,
             name: editingProduct.name,
             sku: editingProduct.code,
+            barcode: editingProduct.barcode,
+            brand: editingProduct.brand,
             category: editingProduct.category,
             price: editingProduct.price,
             description: editingProduct.description,
