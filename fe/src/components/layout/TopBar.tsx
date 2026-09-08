@@ -30,8 +30,9 @@ function TopBar() {
           >
             notifications
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary-container text-on-primary-container text-[10px] font-bold leading-none flex items-center justify-center ring-2 ring-surface-container animate-[success-pop_0.2s_ease-out]">
-                {unreadCount > 9 ? '9+' : unreadCount}
+              <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary-container ring-2 ring-surface-container" />
               </span>
             )}
           </button>
