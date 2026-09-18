@@ -107,10 +107,6 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
       maxWidthClassName="max-w-2xl"
     >
       <div className="flex flex-col gap-lg">
-        {enableInvoice && <label className="flex flex-col gap-2 p-4 border border-outline-variant rounded-lg">
-          <span><input type="checkbox" checked={withInvoice} disabled={submitting} onChange={event => setWithInvoice(event.target.checked)} className="mr-2" />Cadastrar nota fiscal de entrada</span>
-          <span className="text-sm text-on-surface-variant">Ao continuar, registre a nota ou importe o XML. O estoque será recebido somente ao confirmar a nota.</span>
-        </label>}
         {/* Informações Básicas */}
         <div className="flex flex-col gap-sm pb-lg border-b border-outline-variant">
           <div>
@@ -230,6 +226,19 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
             rows={3}
           />
         </div>
+
+        {enableInvoice && (
+          <section className="p-4 border border-outline-variant rounded-lg space-y-3" aria-labelledby="purchase-invoice-heading">
+            <h4 id="purchase-invoice-heading" className="text-headline-sm font-headline-sm text-on-surface">Nota fiscal de entrada</h4>
+            <label className="flex items-center gap-3 min-h-11 cursor-pointer">
+              <input type="checkbox" checked={withInvoice} disabled={submitting} onChange={event => setWithInvoice(event.target.checked)} />
+              Cadastrar nota de compra deste produto
+            </label>
+            <p className="text-body-md font-body-md text-on-surface-variant">
+              {withInvoice ? 'Clique em “Continuar para nota de entrada” para preencher os dados da nota ou importar o XML. Os itens já estarão vinculados ao produto; as quantidades entram no estoque ao confirmar a nota.' : 'Sem nota vinculada: informe abaixo as quantidades iniciais do estoque.'}
+            </p>
+          </section>
+        )}
 
         {/* Variações e Estoque */}
         <div className="bg-surface-container rounded-lg p-md border border-outline-variant flex flex-col gap-sm">
