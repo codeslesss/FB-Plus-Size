@@ -1,3 +1,5 @@
+import Purchases from './Purchases'
+import { useSearchParams } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import MetricCard from '../components/dashboard/MetricCard'
 import InventoryToolbar from '../components/inventory/InventoryToolbar'
@@ -15,6 +17,8 @@ import { formatCurrency } from '../utils/currency'
 import { ApiError } from '../api/client'
 
 function Inventory() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const showingNotes = searchParams.get('tab') === 'notes'
   const { notify } = useNotifications()
   const { data, loading, error, reload } = useApi(() => fetchInventory(), [])
   const [searchTerm, setSearchTerm] = useState('')
@@ -65,7 +69,7 @@ function Inventory() {
     reload()
     notify({
       title: 'Produto Cadastrado',
-      message: 'O novo produto já está disponível no estoque e no catálogo.',
+      message: 'Cadastro atualizado. Confira as quantidades na aba Estoque.',
       icon: 'check_circle',
       variant: 'info',
     })
@@ -119,7 +123,11 @@ function Inventory() {
         </p>
       </header>
 
-      {error ? (
+      <div className="flex gap-3 mb-6" role="group" aria-label="Seções do estoque">
+        <button type="button" aria-pressed={!showingNotes} className="border rounded-lg p-3" onClick={() => setSearchParams({})}>Produtos e quantidades</button>
+        <button type="button" aria-pressed={showingNotes} className="border rounded-lg p-3" onClick={() => setSearchParams({ tab: 'notes' })}>Notas de entrada</button>
+      </div>
+      {showingNotes ? <Purchases onRegistered={reload} /> : error ? (
         <AsyncState error={error} onRetry={reload} />
       ) : loading ? (
         <p className="text-body-md font-body-md text-on-surface-variant">Carregando estoque...</p>
@@ -155,6 +163,7 @@ function Inventory() {
       {showNewProduct && (
         <NewProductModal
           existingCategories={categories}
+          enableInvoice
           onClose={() => setShowNewProduct(false)}
           onCreated={handleCreated}
         />

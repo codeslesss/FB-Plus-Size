@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import Modal from '../common/Modal'
 import { createProduct } from '../../api/products'
+import Purchases from '../../pages/Purchases'
+import type { ApiProduct } from '../../api/types'
 import { ApiError } from '../../api/client'
 
 interface VariantDraft {
@@ -13,11 +15,14 @@ interface NewProductModalProps {
   existingCategories: string[]
   onClose: () => void
   onCreated: () => void
+  enableInvoice?: boolean
 }
 
 const emptyVariant: VariantDraft = { size: '', color: '', stock: '' }
 
-function NewProductModal({ existingCategories, onClose, onCreated }: NewProductModalProps) {
+function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice = false }: NewProductModalProps) {
+  const [withInvoice, setWithInvoice] = useState(enableInvoice)
+  const [createdProduct, setCreatedProduct] = useState<ApiProduct | null>(null)
   const [name, setName] = useState('')
   const [sku, setSku] = useState('')
   const [barcode, setBarcode] = useState('')
@@ -55,7 +60,7 @@ function NewProductModal({ existingCategories, onClose, onCreated }: NewProductM
       .map((variant) => ({
         size: variant.size.trim(),
         color: variant.color.trim(),
-        stockQuantity: Number(variant.stock.replace(',', '.')) || 0,
+        stockQuantity: withInvoice ? 0 : Number(variant.stock.replace(',', '.')) || 0,
       }))
 
     if (validVariants.some((variant) => !variant.size || !variant.color)) {
@@ -69,7 +74,7 @@ function NewProductModal({ existingCategories, onClose, onCreated }: NewProductM
 
     setSubmitting(true)
     try {
-      await createProduct({
+      const product = await createProduct({
         name: name.trim(),
         sku: sku.trim(),
         barcode: barcode.trim() || undefined,
@@ -80,7 +85,8 @@ function NewProductModal({ existingCategories, onClose, onCreated }: NewProductM
         variants: validVariants,
       })
       onCreated()
-      onClose()
+      if (withInvoice) setCreatedProduct(product)
+      else onClose()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível cadastrar o produto. Tente novamente.')
     } finally {
@@ -88,6 +94,11 @@ function NewProductModal({ existingCategories, onClose, onCreated }: NewProductM
     }
   }
 
+  if (createdProduct) return (
+    <Modal title="Nota fiscal de entrada" subtitle="Produto cadastrado. Registre a compra para receber o estoque." onClose={onClose} maxWidthClassName="max-w-5xl">
+      <Purchases initialProduct={createdProduct} onRegistered={() => { onCreated(); onClose() }} />
+    </Modal>
+  )
   return (
     <Modal
       title="Novo Produto"
@@ -96,6 +107,10 @@ function NewProductModal({ existingCategories, onClose, onCreated }: NewProductM
       maxWidthClassName="max-w-2xl"
     >
       <div className="flex flex-col gap-lg">
+        {enableInvoice && <label className="flex flex-col gap-2 p-4 border border-outline-variant rounded-lg">
+          <span><input type="checkbox" checked={withInvoice} disabled={submitting} onChange={event => setWithInvoice(event.target.checked)} className="mr-2" />Cadastrar nota fiscal de entrada</span>
+          <span className="text-sm text-on-surface-variant">Ao continuar, registre a nota ou importe o XML. O estoque será recebido somente ao confirmar a nota.</span>
+        </label>}
         {/* Informações Básicas */}
         <div className="flex flex-col gap-sm pb-lg border-b border-outline-variant">
           <div>
@@ -268,7 +283,8 @@ function NewProductModal({ existingCategories, onClose, onCreated }: NewProductM
                     <td className="py-xs px-xs">
                       <input
                         className="w-full h-9 bg-background border border-outline-variant rounded-md px-2 text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                        value={variant.stock}
+                        disabled={withInvoice}
+                        value={withInvoice ? '0' : variant.stock}
                         onChange={(event) => updateVariant(index, { stock: event.target.value })}
                         placeholder="0"
                         inputMode="numeric"

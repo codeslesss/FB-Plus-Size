@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from './layouts/AppLayout'
 import RequireAuth from './components/auth/RequireAuth'
 import Login from './pages/Login'
@@ -9,7 +9,6 @@ import Inventory from './pages/Inventory'
 import Exchanges from './pages/Exchanges'
 import SalesHistory from './pages/SalesHistory'
 
-import Purchases from './pages/Purchases'
 import FiscalDocuments from './pages/FiscalDocuments'
 
 function App() {
@@ -21,7 +20,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/pdv" element={<PDV />} />
           <Route path="/products" element={<Products />} />
-          <Route path="/purchases" element={<Purchases />} />
+          <Route path="/purchases" element={<Navigate to="/inventory?tab=notes" replace />} />
           <Route path="/fiscal" element={<FiscalDocuments />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/exchanges" element={<Exchanges />} />

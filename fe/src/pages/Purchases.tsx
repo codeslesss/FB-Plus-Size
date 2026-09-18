@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { fetchProducts } from '../api/products'
 import { fetchPurchases, fetchFiscalSettings, previewPurchase, registerPurchase, type PurchaseDraft, type Mapping } from '../api/invoices'
+import type { ApiProduct } from '../api/types'
 import { useApi } from '../hooks/useApi'
 
 const money = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -10,13 +11,14 @@ const emptyItem = () => ({ itemNumber: 1, supplierCode: '', name: '', quantity: 
 function emptyDraft(): PurchaseDraft {
   return { supplierCnpj: '', supplierName: '', recipientCnpj: '', number: '', series: '1', issuedAt: new Date().toISOString(), total: 0, items: [emptyItem()] }
 }
-export default function Purchases() {
+interface PurchasesProps { initialProduct?: ApiProduct; onRegistered?: () => void }
+export default function Purchases({ initialProduct, onRegistered }: PurchasesProps = {}) {
   const products = useApi(() => fetchProducts({ active: true }))
   const history = useApi(fetchPurchases)
   const settings = useApi(fetchFiscalSettings)
-  const [draft, setDraft] = useState<PurchaseDraft>(emptyDraft)
+  const [draft, setDraft] = useState<PurchaseDraft>(() => initialProduct ? { ...emptyDraft(), items: initialProduct.variants.map((variant, index) => ({ ...emptyItem(), itemNumber: index + 1, supplierCode: initialProduct.sku, name: `${initialProduct.name} · ${variant.size} · ${variant.color}` })) } : emptyDraft())
   const [xml, setXml] = useState<string>()
-  const [mappings, setMappings] = useState<Mapping[]>([])
+  const [mappings, setMappings] = useState<Mapping[]>(() => initialProduct?.variants.map((variant, index) => ({ itemNumber: index + 1, productVariantId: variant.id, stockQuantity: 1 })) ?? [])
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const variants = (products.data ?? []).flatMap(product => product.variants.map(variant => ({ ...variant, label: `${product.name} · ${variant.size} · ${variant.color} (${product.sku})` })))
@@ -44,6 +46,7 @@ export default function Purchases() {
       await registerPurchase({ ...draft, recipientCnpj: settings.data?.cnpj ?? draft.recipientCnpj }, mappings, xml)
       setDraft(emptyDraft()); setXml(undefined); setMappings([]); history.reload(); products.reload()
       setMessage('Nota cadastrada e estoque atualizado.')
+      onRegistered?.()
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Erro ao cadastrar nota') }
     finally { setBusy(false) }
   }
@@ -57,7 +60,7 @@ export default function Purchases() {
   return <div className="p-6 space-y-6">
     <h1 className="text-3xl font-bold">Notas de entrada</h1>
     <p>Cadastre a nota de compra ou importe o XML da NF-e. A confirmação adiciona as unidades recebidas ao estoque.</p>
-    <p className="text-on-surface-variant">Cadastre os produtos antes em Produtos, com estoque inicial zero para evitar entrada duplicada.</p>
+    <p className="text-on-surface-variant">{initialProduct ? `Produto ${initialProduct.name} cadastrado com estoque zero. Confirme a nota para receber as unidades. Se fechar agora, o produto ficará cadastrado sem entrada de estoque.` : 'Cadastre novos produtos no Estoque com estoque inicial zero antes de confirmar a nota.'}</p>
     <div className="flex gap-3 flex-wrap">
       <label className={buttonClass}>Importar XML<input aria-label="Importar XML da NF-e" type="file" accept=".xml,text/xml,application/xml" disabled={busy} className="block mt-2" onChange={event => { void importFile(event.target.files?.[0]); event.target.value = '' }} /></label>
       <button type="button" disabled={busy} className={buttonClass} onClick={() => { setDraft(emptyDraft()); setXml(undefined); setMappings([]); setMessage('') }}>Novo cadastro manual</button>
