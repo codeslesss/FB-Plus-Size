@@ -6,6 +6,7 @@ import { asyncHandler } from '../lib/asyncHandler.js'
 import { BadRequestError, NotFoundError } from '../lib/errors.js'
 import { saleWithTotals, roundMoney } from '../lib/saleTotals.js'
 import { transaction } from '../lib/transaction.js'
+import { fiscalIssuer, FISCAL_PENDING_MESSAGE } from '../lib/fiscal.js'
 
 const router = Router()
 
@@ -49,6 +50,7 @@ router.get(
       include: {
         items: { include: { product: true, productVariant: true } },
         exchanges: true,
+        fiscalDocument: true,
       },
     })
 
@@ -61,7 +63,7 @@ router.get(
   asyncHandler<{ id: string }>(async (req, res) => {
     const sale = await prisma.sale.findUnique({
       where: { id: req.params.id },
-      include: { items: { include: { product: true, productVariant: true } }, exchanges: true },
+      include: { items: { include: { product: true, productVariant: true } }, exchanges: true, fiscalDocument: true },
     })
 
     if (!sale) throw new NotFoundError('Venda não encontrada')
@@ -133,8 +135,15 @@ router.post(
           customerName,
           customerPhone: customerPhone || null,
           items: { create: saleItemsData },
+          fiscalDocument: { create: {
+            message: FISCAL_PENDING_MESSAGE,
+            snapshot: { issuer: fiscalIssuer(), total, discount: discountValue, paymentMethod,
+              customerName, items: saleItemsData.map((item) => ({ ...item,
+                name: variantsById.get(item.productVariantId)!.product.name,
+                sku: variantsById.get(item.productVariantId)!.product.sku })) },
+          } },
         },
-        include: { items: { include: { product: true, productVariant: true } } },
+        include: { items: { include: { product: true, productVariant: true } }, fiscalDocument: true },
       })
     })
 

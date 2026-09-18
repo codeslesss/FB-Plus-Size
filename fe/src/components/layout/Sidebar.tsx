@@ -11,6 +11,8 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: 'dashboard' },
   { label: 'Nova Venda (PDV)', path: '/pdv', icon: 'point_of_sale' },
   { label: 'Produtos', path: '/products', icon: 'apparel' },
+  { label: 'Notas de entrada', path: '/purchases', icon: 'receipt_long' },
+  { label: 'Notas de saída', path: '/fiscal', icon: 'description' },
   { label: 'Estoque', path: '/inventory', icon: 'inventory_2' },
   { label: 'Trocas/Devoluções', path: '/exchanges', icon: 'rebase_edit' },
   { label: 'Histórico de Vendas', path: '/sales-history', icon: 'history' },

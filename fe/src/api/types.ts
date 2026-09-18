@@ -61,6 +61,7 @@ export interface ApiExchange {
 }
 
 export interface ApiSale {
+  fiscalDocument?: { id: string; status: 'PENDING_CONFIGURATION'; message: string } | null
   id: string
   total: string
   netTotal?: number

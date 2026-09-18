@@ -127,6 +127,7 @@ function PDV() {
         icon: 'receipt_long',
         variant: 'info',
       })
+      if (sale.fiscalDocument) notify({ title: 'NFC-e não emitida', message: sale.fiscalDocument.message, icon: 'warning', variant: 'warning' })
       if (autoPrintReceipt) {
         notify({
           title: 'Recibo Impresso',

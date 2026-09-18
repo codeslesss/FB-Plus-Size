@@ -170,15 +170,16 @@ router.delete(
     const variant = await prisma.productVariant.findUnique({ where: { id: req.params.variantId } })
     if (!variant || variant.productId !== req.params.id) throw new NotFoundError('Variante não encontrada')
 
-    const [saleItemCount, exchangeCount] = await Promise.all([
+    const [saleItemCount, exchangeCount, purchaseCount] = await Promise.all([
       prisma.saleItem.count({ where: { productVariantId: variant.id } }),
       prisma.exchange.count({
         where: { OR: [{ returnedVariantId: variant.id }, { newVariantId: variant.id }] },
       }),
+      prisma.purchaseInvoiceItem.count({ where: { productVariantId: variant.id } }),
     ])
 
-    if (saleItemCount > 0 || exchangeCount > 0) {
-      throw new BadRequestError('Não é possível excluir uma variante com vendas ou trocas registradas')
+    if (saleItemCount > 0 || exchangeCount > 0 || purchaseCount > 0) {
+      throw new BadRequestError('Não é possível excluir uma variante com compras, vendas ou trocas registradas')
     }
 
     await prisma.productVariant.delete({ where: { id: variant.id } })

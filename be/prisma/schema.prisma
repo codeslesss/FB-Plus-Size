@@ -60,6 +60,8 @@ model ProductVariant {
   saleItems    SaleItem[]
   exchangesOut Exchange[] @relation("ExchangeReturnedVariant")
   exchangesIn  Exchange[] @relation("ExchangeNewVariant")
+  purchaseItems PurchaseInvoiceItem[]
+  lastPurchaseUnitCost Float?
 
   @@unique([productId, size, color])
 }
@@ -79,6 +81,58 @@ model Sale {
 
   items     SaleItem[]
   exchanges Exchange[]
+  fiscalDocument FiscalDocument?
+}
+
+model PurchaseInvoice {
+  id             String @id @default(auto()) @map("_id") @db.ObjectId
+  accessKey      String?
+  supplierCnpj   String
+  supplierName   String
+  recipientCnpj  String
+  number         String
+  series         String
+  issuedAt       DateTime
+  total          Float
+  source         String
+  xml            String?
+  createdById    String @db.ObjectId
+  createdAt      DateTime @default(now())
+  items          PurchaseInvoiceItem[]
+
+  @@unique([supplierCnpj, number, series])
+}
+
+model PurchaseInvoiceItem {
+  id               String @id @default(auto()) @map("_id") @db.ObjectId
+  purchaseInvoiceId String @db.ObjectId
+  purchaseInvoice  PurchaseInvoice @relation(fields: [purchaseInvoiceId], references: [id])
+  productVariantId String @db.ObjectId
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+  itemNumber       Int
+  supplierCode     String
+  name             String
+  ncm              String?
+  quantity         Float
+  stockQuantity    Int
+  unitCost         Float
+  subtotal         Float
+}
+
+enum FiscalDocumentStatus {
+  PENDING_CONFIGURATION
+}
+
+model FiscalDocument {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  saleId      String @unique @db.ObjectId
+  sale        Sale @relation(fields: [saleId], references: [id])
+  model       String @default("65")
+  status      FiscalDocumentStatus @default(PENDING_CONFIGURATION)
+  message     String
+  snapshot    Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model SaleItem {

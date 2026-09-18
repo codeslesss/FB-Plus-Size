@@ -9,6 +9,9 @@ import Inventory from './pages/Inventory'
 import Exchanges from './pages/Exchanges'
 import SalesHistory from './pages/SalesHistory'
 
+import Purchases from './pages/Purchases'
+import FiscalDocuments from './pages/FiscalDocuments'
+
 function App() {
   return (
     <Routes>
@@ -18,6 +21,8 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/pdv" element={<PDV />} />
           <Route path="/products" element={<Products />} />
+          <Route path="/purchases" element={<Purchases />} />
+          <Route path="/fiscal" element={<FiscalDocuments />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/exchanges" element={<Exchanges />} />
           <Route path="/sales-history" element={<SalesHistory />} />

@@ -10,6 +10,8 @@ import inventoryRouter from './routes/inventory.js'
 import salesRouter from './routes/sales.js'
 import exchangesRouter from './routes/exchanges.js'
 import dashboardRouter from './routes/dashboard.js'
+import purchasesRouter from './routes/purchases.js'
+import fiscalRouter from './routes/fiscal.js'
 
 export function createApp() {
   const app = express()
@@ -21,7 +23,7 @@ export function createApp() {
       credentials: true,
     }),
   )
-  app.use(express.json())
+  app.use(express.json({ limit: '2mb' }))
   app.use(cookieParser())
 
   app.get('/health', (_req, res) => res.json({ status: 'ok' }))
@@ -33,6 +35,8 @@ export function createApp() {
   app.use('/api/sales', requireAuth, salesRouter)
   app.use('/api/exchanges', requireAuth, exchangesRouter)
   app.use('/api/dashboard', requireAuth, dashboardRouter)
+  app.use('/api/purchases', requireAuth, purchasesRouter)
+  app.use('/api/fiscal', requireAuth, fiscalRouter)
 
   app.use((req, res) => {
     res.status(404).json({ error: 'Rota não encontrada' })

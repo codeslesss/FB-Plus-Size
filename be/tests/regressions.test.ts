@@ -231,3 +231,16 @@ test('rateio de desconto entre produtos não cria centavos extras de reembolso',
   ] }
   assert.equal(returnedValue(sale, 'a', 1) + returnedValue(sale, 'b', 1), 0.01)
 })
+
+
+test('venda gera saída pendente com cópia dos valores, sem afirmar emissão fiscal', async () => {
+  const { variant } = database()
+  const result = await request('/sales', { paymentMethod: 'PIX', customerName: 'Teste', items: [{ productVariantId: 'variant', quantity: 1 }] })
+  assert.equal(result.status, 201)
+  const output = result.body.fiscalDocument.create
+  assert.match(output.message, /NFC-e não emitida/)
+  assert.equal(output.snapshot.total, 50)
+  assert.equal(output.snapshot.items[0].name, 'Blusa')
+  variant.product.name = 'Alterado'
+  assert.equal(output.snapshot.items[0].name, 'Blusa')
+})
