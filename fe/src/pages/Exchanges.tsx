@@ -7,12 +7,12 @@ import ExchangeHistoryTable from '../components/exchanges/ExchangeHistoryTable'
 import AsyncState from '../components/common/AsyncState'
 import type { ExchangeAction, HistoryEntry, ItemDraft, ReplacementProduct, Sale } from '../types/exchange'
 import { buildSummaryLines } from '../utils/exchangeSummary'
-import { fetchSales } from '../api/sales'
+import { fetchSalesHistory } from '../api/sales'
 import { fetchProducts } from '../api/products'
 import { createExchange, fetchExchanges } from '../api/exchanges'
 import { useApi } from '../hooks/useApi'
 import { ApiError } from '../api/client'
-import { paymentMethodLabel } from '../utils/paymentMethod'
+import { mapExchangeSale } from '../utils/mapExchangeSale'
 import { formatRelativeDateTime } from '../utils/date'
 import { shortSaleId } from '../utils/saleId'
 import type { ApiExchangeDetailed } from '../api/types'
@@ -27,9 +27,7 @@ const emptyDraft: ItemDraft = {
 
 function mapHistoryEntry(exchange: ApiExchangeDetailed): HistoryEntry {
   const isReturn = !exchange.newVariantId
-  const value = isReturn
-    ? -Number(exchange.returnedVariant.product.price) * exchange.returnedQuantity
-    : Number(exchange.priceDifference)
+  const value = Number(exchange.priceDifference)
 
   return {
     id: exchange.id,
@@ -47,7 +45,7 @@ function mapHistoryEntry(exchange: ApiExchangeDetailed): HistoryEntry {
 
 function Exchanges() {
   const { notify } = useNotifications()
-  const salesQuery = useApi(() => fetchSales({ limit: 30 }), [])
+  const salesQuery = useApi(() => fetchSalesHistory(), [])
   const productsQuery = useApi(() => fetchProducts({ active: true }), [])
   const historyQuery = useApi(() => fetchExchanges(20), [])
 
@@ -57,19 +55,7 @@ function Exchanges() {
 
   const sales: Sale[] = useMemo(
     () =>
-      (salesQuery.data ?? []).map((sale) => ({
-        id: sale.id,
-        time: new Date(sale.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        paymentMethod: paymentMethodLabel(sale.paymentMethod),
-        items: sale.items.map((item) => ({
-          id: item.id,
-          productVariantId: item.productVariantId,
-          code: item.product.sku,
-          name: item.product.name,
-          size: item.productVariant.size,
-          price: Number(item.unitPrice),
-        })),
-      })),
+      (salesQuery.data ?? []).map(mapExchangeSale).filter((sale) => sale.items.length > 0),
     [salesQuery.data],
   )
 
@@ -149,8 +135,6 @@ function Exchanges() {
 
       setSelectedSaleId(null)
       setDrafts({})
-      productsQuery.reload()
-      historyQuery.reload()
     } catch (err) {
       notify({
         title: 'Erro ao Processar',
@@ -159,6 +143,12 @@ function Exchanges() {
         variant: 'error',
       })
     } finally {
+      // Some requests may have succeeded before a later item failed. Refresh and
+      // clear the draft so a retry cannot submit those successful returns again.
+      setDrafts({})
+      salesQuery.reload()
+      productsQuery.reload()
+      historyQuery.reload()
       setSubmitting(false)
     }
   }

@@ -9,6 +9,8 @@ export function mapApiSaleToRecord(sale: ApiSale): SaleRecord {
     date: new Date(sale.createdAt),
     paymentMethod: paymentMethodLabel(sale.paymentMethod),
     status: deriveSaleStatus(sale),
+    total: Number(sale.total),
+    netTotal: sale.netTotal ?? Number(sale.total),
     items: sale.items.map((item) => ({
       name: item.product.name,
       size: item.productVariant.size,

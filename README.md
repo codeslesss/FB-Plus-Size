@@ -50,6 +50,8 @@ Busca a venda, escolhe o item, processa a troca ou devolução — o estoque das
 
 Todas as vendas registradas, com forma de pagamento, status e filtro por período.
 
+O histórico consulta todas as páginas da API. O valor de cada pedido inclui o desconto; o faturamento considera o saldo após trocas e devoluções. Devoluções parciais mantêm no faturamento o valor dos itens que ficaram com o cliente. Esses indicadores agrupam o saldo pela data da venda original, não representam um fluxo de caixa por data de reembolso.
+
 ![Histórico de vendas](docs/screenshots/08-historico.png)
 
 ## Stack
@@ -88,3 +90,9 @@ npm run dev
 ## Deploy
 
 Backend e frontend rodam como serviços separados no Railway. O frontend usa `serve -s dist` para servir o build estático com suporte a rotas do React Router; o backend precisa das variáveis `DATABASE_URL`, `JWT_SECRET` e `CORS_ORIGIN` (com a URL do frontend em produção) configuradas no serviço.
+
+Após atualizar o backend, execute `npm run prisma:generate` e `npm run prisma:push` no ambiente configurado. O campo interno `Sale.exchangeVersion` permite detectar devoluções concorrentes da mesma venda; documentos antigos recebem o valor padrão na leitura e são atualizados na próxima troca/devolução. O MongoDB precisa suportar transações (replica set, como no Atlas).
+
+## Validação
+
+No backend, `npm test` executa testes de regressão das rotas HTTP e dos cálculos do frontend, substituindo apenas o acesso ao banco por dados isolados. Não acessa o banco da loja. Execute também `npm run build` em `be/` e `npm run build` e `npm run lint` em `fe/`.

@@ -74,6 +74,7 @@ model Sale {
   status        SaleStatus    @default(COMPLETED)
   customerName  String?
   customerPhone String?
+  exchangeVersion Int         @default(0)
   createdAt     DateTime      @default(now())
 
   items     SaleItem[]

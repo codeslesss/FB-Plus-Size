@@ -41,13 +41,14 @@ router.patch(
     const variant = await prisma.productVariant.findUnique({ where: { id: req.params.variantId } })
     if (!variant) throw new NotFoundError('Variante não encontrada')
 
-    const nextQuantity = variant.stockQuantity + parsed.data.delta
-    if (nextQuantity < 0) throw new BadRequestError('Estoque não pode ficar negativo')
-
-    const updated = await prisma.productVariant.update({
-      where: { id: req.params.variantId },
-      data: { stockQuantity: nextQuantity },
-      include: { product: true },
+    const delta = parsed.data.delta
+    const result = await prisma.productVariant.updateMany({
+      where: { id: req.params.variantId, ...(delta < 0 ? { stockQuantity: { gte: -delta } } : {}) },
+      data: { stockQuantity: { increment: delta } },
+    })
+    if (result.count !== 1) throw new BadRequestError('Estoque não pode ficar negativo')
+    const updated = await prisma.productVariant.findUnique({
+      where: { id: req.params.variantId }, include: { product: true },
     })
 
     res.json(updated)

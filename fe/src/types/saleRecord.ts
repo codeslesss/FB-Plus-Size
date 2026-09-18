@@ -12,5 +12,7 @@ export interface SaleRecord {
   date: Date
   paymentMethod: string
   status: SaleStatus
+  total: number
+  netTotal: number
   items: SaleRecordItem[]
 }

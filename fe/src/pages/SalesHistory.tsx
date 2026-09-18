@@ -3,7 +3,7 @@ import MetricCard from '../components/dashboard/MetricCard'
 import SalesHistoryToolbar from '../components/sales-history/SalesHistoryToolbar'
 import SalesHistoryTable from '../components/sales-history/SalesHistoryTable'
 import AsyncState from '../components/common/AsyncState'
-import { fetchSales } from '../api/sales'
+import { fetchSalesHistory } from '../api/sales'
 import { useApi } from '../hooks/useApi'
 import type { SaleStatus } from '../types/saleRecord'
 import { formatCurrency } from '../utils/currency'
@@ -11,7 +11,7 @@ import { isWithinPeriod, type Period } from '../utils/period'
 import { mapApiSaleToRecord } from '../utils/mapApiSale'
 
 function SalesHistory() {
-  const { data, loading, error, reload } = useApi(() => fetchSales({ limit: 100 }), [])
+  const { data, loading, error, reload } = useApi(() => fetchSalesHistory(), [])
   const [searchTerm, setSearchTerm] = useState('')
   const [status, setStatus] = useState<SaleStatus | ''>('')
   const [period, setPeriod] = useState<Period>('7d')
@@ -31,9 +31,7 @@ function SalesHistory() {
     .sort((a, b) => b.date.getTime() - a.date.getTime())
 
   const validSales = filteredSales.filter((sale) => sale.status !== 'cancelled')
-  const revenue = filteredSales
-    .filter((sale) => sale.status === 'completed' || sale.status === 'exchanged')
-    .reduce((sum, sale) => sum + sale.items.reduce((itemSum, item) => itemSum + item.price, 0), 0)
+  const revenue = validSales.reduce((sum, sale) => sum + sale.netTotal, 0)
   const averageTicket = validSales.length > 0 ? revenue / validSales.length : 0
   const exchangesReturns = filteredSales.filter((sale) => sale.status === 'exchanged' || sale.status === 'returned').length
 

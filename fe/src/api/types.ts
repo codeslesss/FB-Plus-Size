@@ -63,6 +63,8 @@ export interface ApiExchange {
 export interface ApiSale {
   id: string
   total: string
+  netTotal?: number
+  returnableItems?: Record<string, { quantity: number; unitValue: number }>
   discount: string
   paymentMethod: ApiPaymentMethod
   installments: number

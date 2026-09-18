@@ -4,8 +4,17 @@ import { PaymentMethod } from '@prisma/client'
 import { prisma } from '../lib/prisma.js'
 import { asyncHandler } from '../lib/asyncHandler.js'
 import { BadRequestError, NotFoundError } from '../lib/errors.js'
+import { saleWithTotals, roundMoney } from '../lib/saleTotals.js'
+import { transaction } from '../lib/transaction.js'
 
 const router = Router()
+
+const salesQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().nonnegative().default(0),
+  since: z.string().datetime({ offset: true }).optional(),
+  until: z.string().datetime({ offset: true }).optional(),
+})
 
 const saleCreateSchema = z.object({
   paymentMethod: z.nativeEnum(PaymentMethod),
@@ -27,21 +36,23 @@ const saleCreateSchema = z.object({
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    const { limit, since } = req.query
-    const take = typeof limit === 'string' ? Math.min(Number(limit) || 20, 100) : 20
-    const createdAt = typeof since === 'string' ? { gte: new Date(since) } : undefined
+    const parsed = salesQuerySchema.safeParse(req.query)
+    if (!parsed.success) throw new BadRequestError('Filtros de vendas inválidos')
+    const { limit, offset, since, until } = parsed.data
+    const createdAt = { gte: since ? new Date(since) : undefined, lte: until ? new Date(until) : undefined }
 
     const sales = await prisma.sale.findMany({
-      take,
+      take: limit,
+      skip: offset,
       where: { createdAt },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       include: {
         items: { include: { product: true, productVariant: true } },
         exchanges: true,
       },
     })
 
-    res.json(sales)
+    res.json(sales.map(saleWithTotals))
   }),
 )
 
@@ -54,7 +65,7 @@ router.get(
     })
 
     if (!sale) throw new NotFoundError('Venda não encontrada')
-    res.json(sale)
+    res.json(saleWithTotals(sale))
   }),
 )
 
@@ -64,10 +75,15 @@ router.post(
     const parsed = saleCreateSchema.safeParse(req.body)
     if (!parsed.success) throw new BadRequestError(parsed.error.message)
 
-    const { paymentMethod, discount, customerName, customerPhone, installments, cardBrand, items } = parsed.data
+    const { paymentMethod, discount, customerName, customerPhone, installments, cardBrand } = parsed.data
+    const quantities = new Map<string, number>()
+    for (const item of parsed.data.items) {
+      quantities.set(item.productVariantId, (quantities.get(item.productVariantId) ?? 0) + item.quantity)
+    }
+    const items = [...quantities].map(([productVariantId, quantity]) => ({ productVariantId, quantity }))
     const isCardPayment = paymentMethod === 'CREDITO' || paymentMethod === 'DEBITO'
 
-    const sale = await prisma.$transaction(async (tx) => {
+    const sale = await transaction(async (tx) => {
       const variants = await tx.productVariant.findMany({
         where: { id: { in: items.map((item) => item.productVariantId) } },
         include: { product: true },
@@ -79,11 +95,12 @@ router.post(
       const saleItemsData = items.map((item) => {
         const variant = variantsById.get(item.productVariantId)
         if (!variant) throw new NotFoundError(`Variante ${item.productVariantId} não encontrada`)
+        if (!variant.product.active) throw new BadRequestError('Produto inativo não pode ser vendido')
         if (variant.stockQuantity < item.quantity) {
           throw new BadRequestError(`Estoque insuficiente para ${variant.product.name} (${variant.size}/${variant.color})`)
         }
 
-        const subtotal = variant.product.price * item.quantity
+        const subtotal = roundMoney(variant.product.price * item.quantity)
         subtotalSum += subtotal
 
         return {
@@ -95,14 +112,15 @@ router.post(
         }
       })
 
-      const discountValue = Math.min(discount, subtotalSum)
-      const total = subtotalSum - discountValue
+      const discountValue = roundMoney(Math.min(discount, subtotalSum))
+      const total = roundMoney(subtotalSum - discountValue)
 
       for (const item of items) {
-        await tx.productVariant.update({
-          where: { id: item.productVariantId },
+        const updated = await tx.productVariant.updateMany({
+          where: { id: item.productVariantId, stockQuantity: { gte: item.quantity } },
           data: { stockQuantity: { decrement: item.quantity } },
         })
+        if (updated.count !== 1) throw new BadRequestError('Estoque insuficiente para finalizar a venda')
       }
 
       return tx.sale.create({

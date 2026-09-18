@@ -59,7 +59,7 @@ function SalesHistoryTable({ sales }: SalesHistoryTableProps) {
               </tr>
             ) : (
               sales.map((sale) => {
-                const total = sale.items.reduce((sum, item) => sum + item.price, 0)
+                const total = sale.total
                 const badge = statusBadge[sale.status]
                 const isVoided = sale.status === 'cancelled'
 

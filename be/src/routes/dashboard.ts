@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { PaymentMethod } from '@prisma/client'
 import { prisma } from '../lib/prisma.js'
 import { asyncHandler } from '../lib/asyncHandler.js'
+import { netSaleTotal } from '../lib/saleTotals.js'
 
 const router = Router()
 
@@ -30,11 +31,11 @@ router.get(
     const since = startOfToday()
 
     const [salesToday, exchangesToday] = await Promise.all([
-      prisma.sale.findMany({ where: { createdAt: { gte: since }, status: 'COMPLETED' } }),
+      prisma.sale.findMany({ where: { createdAt: { gte: since }, status: 'COMPLETED' }, include: { items: true, exchanges: true } }),
       prisma.exchange.count({ where: { createdAt: { gte: since } } }),
     ])
 
-    const totalToday = salesToday.reduce((sum, sale) => sum + sale.total, 0)
+    const totalToday = salesToday.reduce((sum, sale) => sum + netSaleTotal(sale), 0)
     const averageTicket = salesToday.length > 0 ? totalToday / salesToday.length : 0
 
     res.json({
