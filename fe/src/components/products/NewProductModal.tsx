@@ -330,7 +330,7 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
             className="flex items-center gap-2 px-6 h-11 rounded-lg bg-primary-container text-white font-label-lg text-label-lg font-bold hover:brightness-110 transition-all active:scale-95 shadow-[0_0_15px_rgba(255,87,34,0.3)] hover:shadow-[0_0_20px_rgba(255,87,34,0.5)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
           >
             <span className="material-symbols-outlined text-[18px]">{submitting ? 'hourglass_empty' : 'check'}</span>
-            {submitting ? 'Salvando...' : 'Cadastrar Produto'}
+            {submitting ? 'Salvando...' : withInvoice ? 'Continuar para nota de entrada' : 'Cadastrar Produto'}
           </button>
         </div>
       </div>
