@@ -78,6 +78,17 @@ Crie um login de acesso:
 npm run create-user -- "Nome Completo" email@exemplo.com senha123
 ```
 
+O catálogo começa vazio: cadastre somente produtos reais em Estoque. `npm run prisma:seed` está desativado e não cria produtos/vendas de demonstração nem apaga dados existentes.
+
+Se o banco já recebeu a carga antiga, em `be/`, com `DATABASE_URL` configurado, use:
+
+```bash
+npm run products:remove-demo            # lista os produtos identificados, sem alterar dados
+npm run products:remove-demo -- --apply # retira esses produtos do catálogo, PDV e estoque
+```
+
+A limpeza identifica os cinco produtos da carga antiga pela combinação exata de código, nome, categoria e preço. Usa a mesma exclusão lógica do sistema, preservando usuários e referências no histórico de vendas. Produtos alterados que não coincidam com essa identificação exigem revisão manual. As vendas fictícias da carga antiga não são apagadas por esse comando.
+
 ### Frontend
 
 ```bash

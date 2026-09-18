@@ -12,6 +12,7 @@
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:seed": "tsx prisma/seed.ts",
+    "products:remove-demo": "tsx prisma/removeDemoProducts.ts",
     "create-user": "tsx prisma/createUser.ts"
   },
   "keywords": [],
