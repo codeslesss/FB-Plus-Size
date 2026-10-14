@@ -100,7 +100,12 @@ npm run dev
 
 ## Deploy
 
-Backend e frontend rodam como serviços separados no Railway. O frontend usa `serve -s dist` para servir o build estático com suporte a rotas do React Router; o backend precisa das variáveis `DATABASE_URL`, `JWT_SECRET` e `CORS_ORIGIN` (com a URL do frontend em produção) configuradas no serviço.
+Frontend e backend rodam como dois projetos separados na Vercel (plano gratuito), ligados ao mesmo repositório:
+
+- **Frontend** — Root Directory `fe`, variável `VITE_API_URL` apontando para `https://<projeto-do-backend>.vercel.app/api` (só entra no build: após alterar, faça redeploy). Em produção: `https://fb-plus-size.vercel.app`.
+- **Backend** — Root Directory `be`. A API Express roda como função serverless (`be/api/index.js` importa o app compilado em `dist/`; `be/vercel.json` faz o build e redireciona todas as rotas para ela). Variáveis: `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN` (URL do frontend, sem barra no final) e `NODE_ENV=production` (necessário para o cookie `SameSite=None; Secure` entre domínios).
+
+O banco fica no MongoDB Atlas; em Network Access, libere `0.0.0.0/0`, pois a Vercel não tem IP fixo. Teste com `GET /health` no domínio do backend.
 
 Após atualizar o backend, execute `npm run prisma:generate` e `npm run prisma:push` no ambiente configurado. O campo interno `Sale.exchangeVersion` permite detectar devoluções concorrentes da mesma venda; documentos antigos recebem o valor padrão na leitura e são atualizados na próxima troca/devolução. O MongoDB precisa suportar transações (replica set, como no Atlas).
 
