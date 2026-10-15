@@ -102,7 +102,7 @@ npm run dev
 
 Frontend e backend rodam como dois projetos separados na Vercel (plano gratuito), ligados ao mesmo repositório:
 
-- **Frontend** — Root Directory `fe`, variável `VITE_API_URL` apontando para `https://<projeto-do-backend>.vercel.app/api` (só entra no build: após alterar, faça redeploy). Em produção: `https://fb-plus-size.vercel.app`.
+- **Frontend** — Root Directory `fe`, variável `VITE_API_URL=/api` (só entra no build: após alterar, faça redeploy). O `fe/vercel.json` repassa `/api/*` para o projeto do backend — assim o cookie de login fica no mesmo domínio (o Safari bloqueia cookies entre `*.vercel.app` diferentes) — e manda as demais rotas para o `index.html` (rotas do React Router). Em produção: `https://fb-plus-size.vercel.app`. Deploy manual: `npx vercel deploy --prod` na **raiz** do repositório (o `.vercelignore` da raiz deixa de fora `be/` e os `.env`).
 - **Backend** — Root Directory `be`. A API Express roda como função serverless (`be/api/index.js` importa o app compilado em `dist/`; `be/vercel.json` faz o build e redireciona todas as rotas para ela). Variáveis: `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN` (URL do frontend, sem barra no final) e `NODE_ENV=production` (necessário para o cookie `SameSite=None; Secure` entre domínios).
 
 O banco fica no MongoDB Atlas; em Network Access, libere `0.0.0.0/0`, pois a Vercel não tem IP fixo. Teste com `GET /health` no domínio do backend.
