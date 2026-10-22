@@ -23,7 +23,7 @@ interface NewProductModalProps {
 const emptyVariant: VariantDraft = { size: '', color: '', stock: '' }
 
 function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice = false }: NewProductModalProps) {
-  const [withInvoice, setWithInvoice] = useState(enableInvoice)
+  const [withInvoice, setWithInvoice] = useState(false)
   const [createdProduct, setCreatedProduct] = useState<ApiProduct | null>(null)
   const [name, setName] = useState('')
   const [barcode, setBarcode] = useState('')
@@ -289,9 +289,10 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
                     </td>
                     <td className="py-xs px-xs">
                       <input
-                        className="w-full h-9 bg-background border border-outline-variant rounded-md px-2 text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                        className="w-full h-9 bg-background border border-outline-variant rounded-md px-2 text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:bg-surface-container disabled:text-on-surface-variant disabled:cursor-not-allowed"
                         disabled={withInvoice}
-                        value={withInvoice ? '0' : variant.stock}
+                        title={withInvoice ? 'A quantidade entra pela nota de entrada' : undefined}
+                        value={withInvoice ? 'Pela nota' : variant.stock}
                         onChange={(event) => updateVariant(index, { stock: event.target.value })}
                         placeholder="0"
                         inputMode="numeric"
