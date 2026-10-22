@@ -42,7 +42,6 @@ interface EditProductModalProps {
 
 function EditProductModal({ product, existingCategories, onClose, onUpdated }: EditProductModalProps) {
   const [name, setName] = useState(product.name)
-  const [sku, setSku] = useState(product.sku)
   const [barcode, setBarcode] = useState(product.barcode ?? '')
   const [brand, setBrand] = useState(product.brand ?? '')
   const [category, setCategory] = useState(product.category)
@@ -107,8 +106,8 @@ function EditProductModal({ product, existingCategories, onClose, onUpdated }: E
     setError(null)
 
     const parsedPricing = parsePricingDrafts(pricing)
-    if (!name.trim() || !sku.trim() || !category.trim()) {
-      setError('Preencha nome, código e categoria.')
+    if (!name.trim() || !category.trim()) {
+      setError('Preencha nome e categoria.')
       return
     }
     if (!parsedPricing.ok) {
@@ -126,7 +125,6 @@ function EditProductModal({ product, existingCategories, onClose, onUpdated }: E
     try {
       await updateProduct(product.id, {
         name: name.trim(),
-        sku: sku.trim(),
         barcode: barcode.trim(),
         brand: brand.trim(),
         category: category.trim(),
@@ -199,12 +197,9 @@ function EditProductModal({ product, existingCategories, onClose, onUpdated }: E
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
                 tag
               </span>
-              <input
-                className="w-full h-11 bg-background border border-outline-variant rounded-lg pl-9 pr-sm text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                value={sku}
-                onChange={(event) => setSku(event.target.value)}
-                placeholder="Ex: VES-003"
-              />
+              <div className="w-full h-11 flex items-center bg-surface-container border border-outline-variant rounded-lg pl-9 pr-sm text-body-md font-body-md text-on-surface-variant font-mono">
+                {product.sku}
+              </div>
             </div>
           </div>
           <div>
