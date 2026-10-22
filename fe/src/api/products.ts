@@ -20,6 +20,8 @@ export interface CreateProductPayload {
   brand?: string
   category: string
   price: number
+  costPrice?: number
+  taxRate?: number
   description?: string
   variants: { size: string; color: string; stockQuantity: number; lowStockThreshold?: number }[]
 }
@@ -35,6 +37,8 @@ export interface UpdateProductPayload {
   brand?: string
   category?: string
   price?: number
+  costPrice?: number | null
+  taxRate?: number | null
   description?: string
   active?: boolean
 }

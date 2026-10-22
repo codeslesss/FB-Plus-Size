@@ -1,5 +1,6 @@
 import type { CatalogProduct } from '../../types/product'
 import { formatCurrency } from '../../utils/currency'
+import { averageMargin, computePricing, formatPercent } from '../../utils/margin'
 
 const LOW_STOCK_THRESHOLD = 5
 
@@ -10,6 +11,8 @@ interface ProductsTableProps {
 }
 
 function ProductsTable({ products, onEdit, onDelete }: ProductsTableProps) {
+  const marginAverage = averageMargin(products)
+
   return (
     <div className="bg-surface-container-low rounded-xl border border-outline-variant overflow-hidden flex-1 flex flex-col shadow-sm">
       <div className="overflow-x-auto flex-1">
@@ -26,7 +29,13 @@ function ProductsTable({ products, onEdit, onDelete }: ProductsTableProps) {
                 Categoria
               </th>
               <th className="font-label-md text-label-md text-on-surface-variant uppercase px-6 py-4 font-bold tracking-wider">
-                Preço
+                Custo
+              </th>
+              <th className="font-label-md text-label-md text-on-surface-variant uppercase px-6 py-4 font-bold tracking-wider">
+                Venda
+              </th>
+              <th className="font-label-md text-label-md text-on-surface-variant uppercase px-6 py-4 font-bold tracking-wider">
+                Margem
               </th>
               <th className="font-label-md text-label-md text-on-surface-variant uppercase px-6 py-4 font-bold tracking-wider">
                 Estoque Total
@@ -39,13 +48,14 @@ function ProductsTable({ products, onEdit, onDelete }: ProductsTableProps) {
           <tbody className="divide-y divide-outline-variant">
             {products.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-10 text-center text-body-md font-body-md text-on-surface-variant">
+                <td colSpan={8} className="px-6 py-10 text-center text-body-md font-body-md text-on-surface-variant">
                   Nenhum produto encontrado.
                 </td>
               </tr>
             ) : (
               products.map((product) => {
                 const lowStock = product.stock <= LOW_STOCK_THRESHOLD
+                const pricing = computePricing(product)
                 return (
                   <tr
                     key={product.id}
@@ -58,7 +68,15 @@ function ProductsTable({ products, onEdit, onDelete }: ProductsTableProps) {
                         {product.category}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-body-md font-body-md text-on-surface-variant">
+                      {product.costPrice === null ? '—' : formatCurrency(product.costPrice)}
+                    </td>
                     <td className="px-6 py-4 text-body-md font-body-md text-primary">{formatCurrency(product.price)}</td>
+                    <td
+                      className={`px-6 py-4 text-body-md font-body-md font-semibold ${pricing && pricing.marginPercent < 0 ? 'text-error' : 'text-on-surface'}`}
+                    >
+                      {pricing ? formatPercent(pricing.marginPercent) : '—'}
+                    </td>
                     <td className="px-6 py-4 text-body-md font-body-md">
                       {lowStock ? (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-error-container text-on-error-container">
@@ -102,6 +120,7 @@ function ProductsTable({ products, onEdit, onDelete }: ProductsTableProps) {
       <div className="p-4 border-t border-outline-variant bg-surface-container flex items-center justify-between flex-shrink-0">
         <span className="text-label-md font-label-md text-on-surface-variant">
           Mostrando {products.length} de {products.length} produtos
+          {marginAverage !== null && ` · Margem média: ${formatPercent(marginAverage)}`}
         </span>
         <div className="flex gap-2">
           <button

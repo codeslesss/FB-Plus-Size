@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Modal from '../common/Modal'
 import { createProduct } from '../../api/products'
 import Purchases from '../../pages/Purchases'
+import PricingFields, { parsePricingDrafts, type PricingDrafts } from './PricingFields'
 import type { ApiProduct } from '../../api/types'
 import { ApiError } from '../../api/client'
 
@@ -28,7 +29,7 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
   const [barcode, setBarcode] = useState('')
   const [brand, setBrand] = useState('')
   const [category, setCategory] = useState('')
-  const [priceDraft, setPriceDraft] = useState('')
+  const [pricing, setPricing] = useState<PricingDrafts>({ price: '', costPrice: '', taxRate: '' })
   const [description, setDescription] = useState('')
   const [variants, setVariants] = useState<VariantDraft[]>([{ ...emptyVariant }])
   const [submitting, setSubmitting] = useState(false)
@@ -45,13 +46,13 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
   const handleSubmit = async () => {
     setError(null)
 
-    const parsedPrice = Number(priceDraft.replace(',', '.'))
+    const parsedPricing = parsePricingDrafts(pricing)
     if (!name.trim() || !sku.trim() || !category.trim()) {
       setError('Preencha nome, código e categoria.')
       return
     }
-    if (Number.isNaN(parsedPrice) || parsedPrice <= 0) {
-      setError('Informe um preço válido (ex: 89,90).')
+    if (!parsedPricing.ok) {
+      setError(parsedPricing.error)
       return
     }
 
@@ -80,7 +81,9 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
         barcode: barcode.trim() || undefined,
         brand: brand.trim() || undefined,
         category: category.trim(),
-        price: parsedPrice,
+        price: parsedPricing.price,
+        costPrice: parsedPricing.costPrice ?? undefined,
+        taxRate: parsedPricing.taxRate ?? undefined,
         description: description.trim() || undefined,
         variants: validVariants,
       })
@@ -140,26 +143,6 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
             </div>
             <div>
               <label className="block text-label-md font-label-md text-on-surface-variant uppercase mb-xs">
-                Preço
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-label-lg font-label-lg font-medium text-on-surface-variant pointer-events-none">
-                  R$
-                </span>
-                <input
-                  className="w-full h-11 bg-background border border-outline-variant rounded-lg pl-9 pr-sm text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  value={priceDraft}
-                  onChange={(event) => setPriceDraft(event.target.value)}
-                  placeholder="0,00"
-                  inputMode="decimal"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-sm mt-sm">
-            <div>
-              <label className="block text-label-md font-label-md text-on-surface-variant uppercase mb-xs">
                 Marca (opcional)
               </label>
               <input
@@ -169,6 +152,9 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
                 placeholder="Ex: Malwee"
               />
             </div>
+          </div>
+
+          <div>
             <div>
               <label className="block text-label-md font-label-md text-on-surface-variant uppercase mb-xs">
                 Código de Barras (opcional)
@@ -187,6 +173,16 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Preços e margem */}
+        <div className="flex flex-col gap-sm pb-lg border-b border-outline-variant">
+          <h4 className="text-headline-sm font-headline-sm text-on-surface">Preços e margem</h4>
+          <PricingFields
+            drafts={pricing}
+            onChange={(patch) => setPricing((current) => ({ ...current, ...patch }))}
+            labelClassName="block text-label-md font-label-md text-on-surface-variant uppercase mb-xs"
+          />
         </div>
 
         {/* Classificação */}

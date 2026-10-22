@@ -37,6 +37,8 @@ model Product {
   brand       String?
   category    String
   price       Float
+  costPrice   Float?
+  taxRate     Float?
   description String?
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())

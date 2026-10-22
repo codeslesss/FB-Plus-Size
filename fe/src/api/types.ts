@@ -20,6 +20,8 @@ export interface ApiProduct {
   brand: string | null
   category: string
   price: string
+  costPrice: number | null
+  taxRate: number | null
   description: string | null
   active: boolean
   createdAt: string
