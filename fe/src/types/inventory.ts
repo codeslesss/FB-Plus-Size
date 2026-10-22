@@ -11,6 +11,8 @@ export interface StockVariant {
   size: string
   color: string
   price: number
+  costPrice: number | null
+  taxRate: number | null
   description: string | null
   stock: number
 }

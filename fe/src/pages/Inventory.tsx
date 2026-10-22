@@ -14,6 +14,7 @@ import { deleteProduct } from '../api/products'
 import { useApi } from '../hooks/useApi'
 import { LOW_STOCK_THRESHOLD, type StockVariant } from '../types/inventory'
 import { formatCurrency } from '../utils/currency'
+import { averageMargin, formatPercent } from '../utils/margin'
 import { ApiError } from '../api/client'
 
 function Inventory() {
@@ -40,6 +41,8 @@ function Inventory() {
     size: variant.size,
     color: variant.color,
     price: Number(variant.product.price),
+    costPrice: variant.product.costPrice,
+    taxRate: variant.product.taxRate,
     description: variant.product.description,
     stock: variant.stockQuantity,
   }))
@@ -111,7 +114,11 @@ function Inventory() {
 
   const outOfStockCount = variants.filter((variant) => variant.stock === 0).length
   const lowStockCount = variants.filter((variant) => variant.stock > 0 && variant.stock <= LOW_STOCK_THRESHOLD).length
-  const totalValue = variants.reduce((sum, variant) => sum + variant.price * variant.stock, 0)
+  const totalSaleValue = variants.reduce((sum, variant) => sum + variant.price * variant.stock, 0)
+  const totalCostValue = variants.reduce((sum, variant) => sum + (variant.costPrice ?? 0) * variant.stock, 0)
+  const missingCostCount = new Set(variants.filter((variant) => variant.costPrice === null).map((variant) => variant.productId)).size
+  const uniqueProducts = Array.from(new Map(variants.map((variant) => [variant.productId, variant])).values())
+  const stockMargin = averageMargin(uniqueProducts)
 
   return (
     <div className="flex flex-col h-full">
@@ -133,12 +140,21 @@ function Inventory() {
         <p className="text-body-md font-body-md text-on-surface-variant">Carregando estoque...</p>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-sm mb-md">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-sm mb-md">
             <MetricCard label="SKUs Cadastrados" value={String(variants.length)} />
             <MetricCard label="Itens em Falta" value={String(outOfStockCount)} emphasize={outOfStockCount > 0} />
             <MetricCard label="Estoque Baixo" value={String(lowStockCount)} />
-            <MetricCard label="Valor em Estoque" value={formatCurrency(totalValue)} />
+            <MetricCard label="Estoque a preço de custo" value={formatCurrency(totalCostValue)} />
+            <MetricCard label="Estoque a preço de venda" value={formatCurrency(totalSaleValue)} />
+            <MetricCard label="Margem média" value={stockMargin === null ? '—' : formatPercent(stockMargin)} />
           </div>
+          {missingCostCount > 0 && (
+            <p className="text-label-md font-label-md text-on-surface-variant mb-md">
+              {missingCostCount === 1 ? '1 produto está' : `${missingCostCount} produtos estão`} sem preço de custo e
+              {missingCostCount === 1 ? ' fica' : ' ficam'} fora do custo e da margem média. Edite o produto ou registre a
+              nota de entrada para completar.
+            </p>
+          )}
 
           <InventoryToolbar
             searchTerm={searchTerm}
@@ -179,6 +195,8 @@ function Inventory() {
             brand: editingVariant.brand,
             category: editingVariant.category,
             price: editingVariant.price,
+            costPrice: editingVariant.costPrice,
+            taxRate: editingVariant.taxRate,
             description: editingVariant.description,
           }}
           existingCategories={categories}

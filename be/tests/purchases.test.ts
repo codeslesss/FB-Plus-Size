@@ -16,16 +16,16 @@ const server = app.listen(0, '127.0.0.1'); await new Promise<void>(resolve => se
 const address = server.address() as { port: number }; after(() => new Promise<void>(resolve => server.close(() => resolve())))
 async function post(body: unknown) { const response = await fetch(`http://127.0.0.1:${address.port}/purchases`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return { status: response.status, body: await response.json() } }
 function database(active = true) {
-  let stock = 0; let cost = 0; let saved = false
-  const tx = { productVariant: { findMany: async () => [{ id: variantId, product: { active } }], update: async ({ data }: any) => { stock += data.stockQuantity.increment; cost = data.lastPurchaseUnitCost } }, purchaseInvoice: { create: async ({ data }: any) => { if (saved) throw { code: 'P2002' }; saved = true; return { id: 'invoice', ...data } } } }
+  let stock = 0; let cost = 0; let productCost = 0; let saved = false
+  const tx = { productVariant: { findMany: async () => [{ id: variantId, product: { active } }], update: async ({ data }: any) => { stock += data.stockQuantity.increment; cost = data.lastPurchaseUnitCost; return { id: variantId, productId: 'cccccccccccccccccccccccc' } } }, product: { update: async ({ data }: any) => { productCost = data.costPrice } }, purchaseInvoice: { create: async ({ data }: any) => { if (saved) throw { code: 'P2002' }; saved = true; return { id: 'invoice', ...data } } } }
   prisma.$transaction = (async (callback: any) => callback(tx)) as typeof prisma.$transaction
-  return { stock: () => stock, cost: () => cost }
+  return { stock: () => stock, cost: () => cost, productCost: () => productCost }
 }
 const payload = () => ({ invoice: draft, mappings: [{ itemNumber: 1, productVariantId: variantId, stockQuantity: 20 }] })
 test('valida CNPJ e normaliza número/série para impedir duplicidade por zeros', () => { assert.ok(validCnpj(draft.supplierCnpj)); assert.equal(validCnpj('11111111111111'), false); assert.equal(validatePurchase(draft).number, '1'); assert.equal(validatePurchase(draft).series, '1') })
 test('não aceita notas destinadas a outro CNPJ', () => assert.throws(() => validatePurchase({ ...draft, recipientCnpj: draft.supplierCnpj }), /CNPJ da loja/))
 test('XML malformado, entidades e falta de protocolo são rejeitados', () => { for (const xml of ['<broken>', '<!DOCTYPE test><test/>', '<NFe><infNFe/></NFe>']) assert.throws(() => parsePurchaseXml(xml)) })
-test('converte caixas em unidades explicitamente e impede repetir entrada', async () => { const db = database(); assert.equal((await post(payload())).status, 201); assert.equal(db.stock(), 20); assert.equal(db.cost(), 5); assert.equal((await post(payload())).status, 400); assert.equal(db.stock(), 20) })
+test('converte caixas em unidades explicitamente e impede repetir entrada', async () => { const db = database(); assert.equal((await post(payload())).status, 201); assert.equal(db.stock(), 20); assert.equal(db.cost(), 5); assert.equal(db.productCost(), 5); assert.equal((await post(payload())).status, 400); assert.equal(db.stock(), 20) })
 test('mapeamento ausente, duplicado ou quantidade fracionada não altera estoque', async () => { const db = database(); for (const mappings of [[], [...payload().mappings, ...payload().mappings], [{ ...payload().mappings[0], stockQuantity: 1.5 }]]) assert.equal((await post({ invoice: draft, mappings })).status, 400); assert.equal(db.stock(), 0) })
 test('produto inativo não recebe entrada', async () => { const db = database(false); assert.equal((await post(payload())).status, 400); assert.equal(db.stock(), 0) })
 test('subtotal manual inconsistente é rejeitado', async () => { const db = database(); assert.equal((await post({ ...payload(), invoice: { ...draft, items: [{ ...draft.items[0], subtotal: 1 }] } })).status, 400); assert.equal(db.stock(), 0) })

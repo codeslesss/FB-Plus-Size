@@ -7,6 +7,8 @@ import {
   updateVariant,
   deleteVariant,
 } from '../../api/products'
+import PricingFields, { parsePricingDrafts, type PricingDrafts } from './PricingFields'
+import { toDecimalDraft } from '../../utils/margin'
 import { ApiError } from '../../api/client'
 
 interface EditableProduct {
@@ -17,6 +19,8 @@ interface EditableProduct {
   brand: string | null
   category: string
   price: number
+  costPrice: number | null
+  taxRate: number | null
   description: string | null
 }
 
@@ -42,7 +46,11 @@ function EditProductModal({ product, existingCategories, onClose, onUpdated }: E
   const [barcode, setBarcode] = useState(product.barcode ?? '')
   const [brand, setBrand] = useState(product.brand ?? '')
   const [category, setCategory] = useState(product.category)
-  const [priceDraft, setPriceDraft] = useState(String(product.price).replace('.', ','))
+  const [pricing, setPricing] = useState<PricingDrafts>({
+    price: toDecimalDraft(product.price),
+    costPrice: toDecimalDraft(product.costPrice),
+    taxRate: toDecimalDraft(product.taxRate),
+  })
   const [description, setDescription] = useState(product.description ?? '')
 
   const [variants, setVariants] = useState<VariantRow[]>([])
@@ -98,13 +106,13 @@ function EditProductModal({ product, existingCategories, onClose, onUpdated }: E
   const handleSubmit = async () => {
     setError(null)
 
-    const parsedPrice = Number(priceDraft.replace(',', '.'))
+    const parsedPricing = parsePricingDrafts(pricing)
     if (!name.trim() || !sku.trim() || !category.trim()) {
       setError('Preencha nome, código e categoria.')
       return
     }
-    if (Number.isNaN(parsedPrice) || parsedPrice <= 0) {
-      setError('Informe um preço válido (ex: 89,90).')
+    if (!parsedPricing.ok) {
+      setError(parsedPricing.error)
       return
     }
 
@@ -122,7 +130,9 @@ function EditProductModal({ product, existingCategories, onClose, onUpdated }: E
         barcode: barcode.trim(),
         brand: brand.trim(),
         category: category.trim(),
-        price: parsedPrice,
+        price: parsedPricing.price,
+        costPrice: parsedPricing.costPrice,
+        taxRate: parsedPricing.taxRate,
         description: description.trim(),
       })
 
@@ -198,24 +208,6 @@ function EditProductModal({ product, existingCategories, onClose, onUpdated }: E
             </div>
           </div>
           <div>
-            <label className="block text-label-md font-label-md text-on-surface-variant mb-xs">Preço</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-label-lg font-label-lg font-medium text-on-surface-variant pointer-events-none">
-                R$
-              </span>
-              <input
-                className="w-full h-11 bg-background border border-outline-variant rounded-lg pl-9 pr-sm text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                value={priceDraft}
-                onChange={(event) => setPriceDraft(event.target.value)}
-                placeholder="0,00"
-                inputMode="decimal"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-sm">
-          <div>
             <label className="block text-label-md font-label-md text-on-surface-variant mb-xs">Marca (opcional)</label>
             <input
               className="w-full h-11 bg-background border border-outline-variant rounded-lg px-sm text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
@@ -224,6 +216,9 @@ function EditProductModal({ product, existingCategories, onClose, onUpdated }: E
               placeholder="Ex: Malwee"
             />
           </div>
+        </div>
+
+        <div>
           <div>
             <label className="block text-label-md font-label-md text-on-surface-variant mb-xs">
               Código de Barras (opcional)
@@ -236,6 +231,15 @@ function EditProductModal({ product, existingCategories, onClose, onUpdated }: E
               inputMode="numeric"
             />
           </div>
+        </div>
+
+        <div className="flex flex-col gap-sm">
+          <h4 className="text-headline-sm font-headline-sm text-on-surface">Preços e margem</h4>
+          <PricingFields
+            drafts={pricing}
+            onChange={(patch) => setPricing((current) => ({ ...current, ...patch }))}
+            labelClassName="block text-label-md font-label-md text-on-surface-variant mb-xs"
+          />
         </div>
 
         <div>

@@ -78,8 +78,11 @@ router.post('/', asyncHandler(async (req, res) => {
         received.set(mapping.productVariantId, current)
       }
       for (const [id, entry] of received) {
-        await tx.productVariant.update({ where: { id },
-          data: { stockQuantity: { increment: entry.quantity }, lastPurchaseUnitCost: entry.amount / entry.quantity } })
+        const unitCost = entry.amount / entry.quantity
+        const variant = await tx.productVariant.update({ where: { id },
+          data: { stockQuantity: { increment: entry.quantity }, lastPurchaseUnitCost: unitCost } })
+        // The latest purchase cost becomes the product cost used for margin reports.
+        await tx.product.update({ where: { id: variant.productId }, data: { costPrice: unitCost } })
       }
       return result
     })

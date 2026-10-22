@@ -26,6 +26,8 @@ function Products() {
     name: product.name,
     category: product.category,
     price: Number(product.price),
+    costPrice: product.costPrice,
+    taxRate: product.taxRate,
     description: product.description,
     stock: product.variants.reduce((sum, variant) => sum + variant.stockQuantity, 0),
   }))
@@ -109,6 +111,8 @@ function Products() {
             brand: editingProduct.brand,
             category: editingProduct.category,
             price: editingProduct.price,
+            costPrice: editingProduct.costPrice,
+            taxRate: editingProduct.taxRate,
             description: editingProduct.description,
           }}
           existingCategories={existingCategories}

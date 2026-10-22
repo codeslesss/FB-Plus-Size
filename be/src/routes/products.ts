@@ -27,6 +27,8 @@ const productCreateSchema = z.object({
   brand: z.string().trim().max(80).optional(),
   category: z.string().min(1),
   price: z.number().positive(),
+  costPrice: z.number().nonnegative().optional(),
+  taxRate: z.number().min(0).max(100).optional(),
   description: z.string().trim().max(2000).optional(),
   variants: z.array(variantInputSchema).default([]),
 })
@@ -38,6 +40,8 @@ const productUpdateSchema = z.object({
   brand: z.string().trim().max(80).optional(),
   category: z.string().min(1).optional(),
   price: z.number().positive().optional(),
+  costPrice: z.number().nonnegative().nullable().optional(),
+  taxRate: z.number().min(0).max(100).nullable().optional(),
   description: z.string().trim().max(2000).optional(),
   active: z.boolean().optional(),
 })
