@@ -5,6 +5,7 @@ import Purchases from '../../pages/Purchases'
 import PricingFields, { parsePricingDrafts, type PricingDrafts } from './PricingFields'
 import type { ApiProduct } from '../../api/types'
 import { ApiError } from '../../api/client'
+import { skuPrefix } from '../../utils/sku'
 
 interface VariantDraft {
   size: string
@@ -25,7 +26,6 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
   const [withInvoice, setWithInvoice] = useState(enableInvoice)
   const [createdProduct, setCreatedProduct] = useState<ApiProduct | null>(null)
   const [name, setName] = useState('')
-  const [sku, setSku] = useState('')
   const [barcode, setBarcode] = useState('')
   const [brand, setBrand] = useState('')
   const [category, setCategory] = useState('')
@@ -47,8 +47,8 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
     setError(null)
 
     const parsedPricing = parsePricingDrafts(pricing)
-    if (!name.trim() || !sku.trim() || !category.trim()) {
-      setError('Preencha nome, código e categoria.')
+    if (!name.trim() || !category.trim()) {
+      setError('Preencha nome e categoria.')
       return
     }
     if (!parsedPricing.ok) {
@@ -77,7 +77,6 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
     try {
       const product = await createProduct({
         name: name.trim(),
-        sku: sku.trim(),
         barcode: barcode.trim() || undefined,
         brand: brand.trim() || undefined,
         category: category.trim(),
@@ -133,13 +132,16 @@ function NewProductModal({ existingCategories, onClose, onCreated, enableInvoice
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
                   tag
                 </span>
-                <input
-                  className="w-full h-11 bg-background border border-outline-variant rounded-lg pl-9 pr-sm text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-                  value={sku}
-                  onChange={(event) => setSku(event.target.value)}
-                  placeholder="Ex: VES-003"
-                />
+                <div
+                  className="w-full h-11 flex items-center bg-surface-container border border-outline-variant rounded-lg pl-9 pr-sm text-body-md font-body-md text-on-surface-variant"
+                  aria-live="polite"
+                >
+                  {category.trim() ? `${skuPrefix(category)}-····` : 'Gerado ao salvar'}
+                </div>
               </div>
+              <p className="text-label-md font-label-md text-on-surface-variant mt-xs">
+                Gerado automaticamente pela categoria.
+              </p>
             </div>
             <div>
               <label className="block text-label-md font-label-md text-on-surface-variant uppercase mb-xs">

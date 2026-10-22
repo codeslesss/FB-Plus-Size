@@ -15,7 +15,7 @@ export function fetchProduct(id: string) {
 
 export interface CreateProductPayload {
   name: string
-  sku: string
+  sku?: string
   barcode?: string
   brand?: string
   category: string

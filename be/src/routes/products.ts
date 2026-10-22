@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '../lib/prisma.js'
 import { asyncHandler } from '../lib/asyncHandler.js'
 import { BadRequestError, NotFoundError } from '../lib/errors.js'
+import { generateSku } from '../lib/sku.js'
 
 const router = Router()
 
@@ -22,7 +23,7 @@ const variantUpdateSchema = z.object({
 
 const productCreateSchema = z.object({
   name: z.string().min(1),
-  sku: z.string().min(1),
+  sku: z.string().trim().min(1).optional(),
   barcode: z.string().trim().max(64).optional(),
   brand: z.string().trim().max(80).optional(),
   category: z.string().min(1),
@@ -83,17 +84,29 @@ router.post(
     const parsed = productCreateSchema.safeParse(req.body)
     if (!parsed.success) throw new BadRequestError(parsed.error.message)
 
-    const { variants, ...productData } = parsed.data
+    const { variants, sku, ...productData } = parsed.data
 
-    const product = await prisma.product.create({
-      data: {
-        ...productData,
-        variants: { create: variants },
-      },
-      include: { variants: true },
-    })
-
-    res.status(201).json(product)
+    // Generated SKUs can collide when two products are saved at the same time; retry with the next number.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const product = await prisma.product.create({
+          data: {
+            ...productData,
+            sku: sku ?? (await generateSku(productData.category)),
+            variants: { create: variants },
+          },
+          include: { variants: true },
+        })
+        res.status(201).json(product)
+        return
+      } catch (err) {
+        const skuTaken = err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002' &&
+          String(err.meta?.target ?? '').includes('sku')
+        if (!skuTaken) throw err
+        if (sku) throw new BadRequestError('Já existe um produto com esse SKU')
+      }
+    }
+    throw new BadRequestError('Não foi possível gerar o SKU. Tente salvar novamente.')
   }),
 )
 
